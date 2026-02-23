@@ -10,7 +10,7 @@
     <!-- FontAwesome for Icons -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <!-- Custom CSS -->
-    <link rel="stylesheet" href="css/style.css">
+    <link rel="stylesheet" href="style.css">
     <!-- XLSX library for Excel parsing -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
 </head>
@@ -51,6 +51,9 @@
     <!-- Main Content -->
     <main class="main-wrapper">
         <header class="top-header">
+            <button class="menu-toggle" onclick="toggleSidebar()" title="เปิดเมนู">
+                <i class="fa-solid fa-bars"></i>
+            </button>
             <div class="header-user">
                 <span>ผู้ใช้งานระบบ</span>
                 <div class="avatar"><i class="fa-solid fa-user"></i></div>
@@ -301,8 +304,8 @@
         </div>
     </div>
 
-    <script src="js/app.js"></script>
-    <script src="js/excel-utils.js"></script>
+    <script src="app.js"></script>
+    <script src="excel-utils.js"></script>
     <script>
         let editProjectId = null;
 

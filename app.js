@@ -251,6 +251,40 @@ function renderSidebar() {
             </button>
         `;
     }
+
+    // Always ensure mobile menu is initialized
+    initMobileMenu();
+}
+
+/**
+ * Mobile Menu Toggle Logic
+ */
+function initMobileMenu() {
+    // Add overlay if missing
+    if (!document.querySelector('.sidebar-overlay')) {
+        const overlay = document.createElement('div');
+        overlay.className = 'sidebar-overlay';
+        document.body.appendChild(overlay);
+
+        overlay.addEventListener('click', toggleSidebar);
+    }
+}
+
+function toggleSidebar() {
+    const sidebar = document.querySelector('.sidebar');
+    const overlay = document.querySelector('.sidebar-overlay');
+
+    if (sidebar && overlay) {
+        sidebar.classList.toggle('open');
+        overlay.classList.toggle('show');
+
+        // Prevent body scroll when menu is open
+        if (sidebar.classList.contains('open')) {
+            document.body.style.overflow = 'hidden';
+        } else {
+            document.body.style.overflow = '';
+        }
+    }
 }
 
 // --- Dynamic Settings CRUD ---
