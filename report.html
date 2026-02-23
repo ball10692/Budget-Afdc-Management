@@ -1,0 +1,530 @@
+<!DOCTYPE html>
+<html lang="th">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AFDC Budget Management System - สรุปรายงาน</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="stylesheet" href="css/style.css">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+    <style>
+        .report-type-cards {
+            display: flex;
+            gap: 12px;
+            margin-bottom: 20px;
+            flex-wrap: wrap;
+        }
+
+        .report-type-card {
+            flex: 1;
+            min-width: 160px;
+            padding: 14px 18px;
+            border-radius: var(--radius-lg);
+            border: 2px solid var(--border-color);
+            background: var(--bg-card);
+            cursor: pointer;
+            transition: var(--transition);
+            text-align: center;
+        }
+
+        .report-type-card:hover {
+            border-color: var(--primary-color);
+            transform: translateY(-2px);
+            box-shadow: var(--shadow-md);
+        }
+
+        .report-type-card.active {
+            border-color: var(--primary-color);
+            background: var(--primary-light);
+        }
+
+        .report-type-card .rt-icon {
+            font-size: 1.5rem;
+            margin-bottom: 6px;
+        }
+
+        .report-type-card .rt-label {
+            font-size: 0.82rem;
+            font-weight: 600;
+        }
+
+        .report-type-card .rt-count {
+            font-size: 0.72rem;
+            color: var(--text-muted);
+            margin-top: 2px;
+        }
+
+        .summary-stats {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+            gap: 12px;
+            margin-bottom: 20px;
+        }
+
+        .summary-stat {
+            background: var(--bg-card);
+            border: 1px solid var(--border-color);
+            border-radius: var(--radius-md);
+            padding: 14px 18px;
+            text-align: center;
+        }
+
+        .summary-stat .ss-value {
+            font-size: 1.3rem;
+            font-weight: 700;
+        }
+
+        .summary-stat .ss-label {
+            font-size: 0.78rem;
+            color: var(--text-muted);
+            margin-top: 2px;
+        }
+    </style>
+</head>
+
+<body>
+    <aside class="sidebar">
+        <div class="sidebar-brand">
+            <i class="fa-solid fa-wallet"></i>
+            <span style="font-size: 0.85em; margin-left: 10px;">AFDC Budget Management System</span>
+        </div>
+        <nav class="sidebar-nav">
+            <a href="index.html" class="nav-link"><i class="fa-solid fa-chart-pie"></i> ภาพรวมงบประมาณ</a>
+            <a href="project-entry.html" class="nav-link"><i class="fa-solid fa-folder-plus"></i> เพิ่มข้อมูลโครงการ</a>
+            <a href="budget-management.html" class="nav-link"><i class="fa-solid fa-money-bill-transfer"></i>
+                บริหารงบประมาณ</a>
+            <a href="budget-adjustment.html" class="nav-link">
+                <i class="fa-solid fa-pen-to-square"></i> ปรับแผนงบประมาณ
+            </a>
+            <a href="budget-transfer.html" class="nav-link"><i class="fa-solid fa-right-left"></i> ปรับโอนงบประมาณ</a>
+            <a href="report.html" class="nav-link active"><i class="fa-solid fa-file-excel"></i> สรุปรายงาน (Export)</a>
+            <hr style="border-color: var(--sidebar-border); margin: 12px 0;">
+            <a href="system-settings.html" class="nav-link"><i class="fa-solid fa-database"></i> จัดการฐานข้อมูล</a>
+            <a href="user-management.html" class="nav-link"><i class="fa-solid fa-users-gear"></i> จัดการผู้ใช้งาน</a>
+        </nav>
+    </aside>
+
+    <main class="main-wrapper">
+        <header class="top-header">
+            <div class="header-user"><span>ผู้ใช้งานระบบ</span>
+                <div class="avatar"><i class="fa-solid fa-user"></i></div>
+            </div>
+        </header>
+
+        <div class="content-area">
+            <div class="page-header">
+                <h1 class="page-title">สรุปรายงานข้อมูลโครงการและงบประมาณ</h1>
+                <button class="btn btn-success" onclick="exportToExcel()"><i class="fa-solid fa-file-excel"></i> Export
+                    to Excel</button>
+            </div>
+
+            <!-- Report Type Cards -->
+            <div class="report-type-cards">
+                <div class="report-type-card active" onclick="selectReportType('summary')" id="rtSummary">
+                    <div class="rt-icon" style="color:var(--primary-color);"><i class="fa-solid fa-chart-pie"></i></div>
+                    <div class="rt-label">สรุปภาพรวม</div>
+                    <div class="rt-count">Overview</div>
+                </div>
+                <div class="report-type-card" onclick="selectReportType('disburse')" id="rtDisburse">
+                    <div class="rt-icon" style="color:var(--success);"><i class="fa-solid fa-money-check-dollar"></i>
+                    </div>
+                    <div class="rt-label">รายงานเบิกจ่าย</div>
+                    <div class="rt-count">Disbursement</div>
+                </div>
+                <div class="report-type-card" onclick="selectReportType('transfer')" id="rtTransfer">
+                    <div class="rt-icon" style="color:var(--warning);"><i class="fa-solid fa-right-left"></i></div>
+                    <div class="rt-label">รายงานปรับโอน</div>
+                    <div class="rt-count">Transfer</div>
+                </div>
+                <div class="report-type-card" onclick="selectReportType('adjust')" id="rtAdjust">
+                    <div class="rt-icon" style="color:#6366f1;"><i class="fa-solid fa-pen-to-square"></i></div>
+                    <div class="rt-label">รายงานปรับแผน</div>
+                    <div class="rt-count">Adjustment</div>
+                </div>
+            </div>
+
+            <!-- Filters -->
+            <div class="card">
+                <h2 class="card-title"><i class="fa-solid fa-filter"></i> ตัวกรองข้อมูล</h2>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label class="form-label">ปีงบประมาณ (Fiscal Year)</label>
+                        <select id="filterFiscalYear" class="form-control" onchange="renderReport()">
+                            <option value="all">ทั้งหมด (All Years)</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">สำนักงานภาค (Region)</label>
+                        <select id="filterRegion" class="form-control" onchange="updateUnits(); renderReport();">
+                            <option value="all">ทั้งหมด (All Regions)</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">หน่วย (Unit)</label>
+                        <select id="filterUnit" class="form-control" onchange="renderReport()">
+                            <option value="all">ทั้งหมด (All Units)</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">ประเภทโครงการ (Project Type)</label>
+                        <select id="filterType" class="form-control" onchange="renderReport()">
+                            <option value="all">ทั้งหมด (All Types)</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">ไตรมาส (Quarter)</label>
+                        <select id="filterQuarter" class="form-control" onchange="renderReport()">
+                            <option value="all">ทั้งหมด (All Quarters)</option>
+                            <option value="Q1">ไตรมาส 1 (ต.ค. - ธ.ค.)</option>
+                            <option value="Q2">ไตรมาส 2 (ม.ค. - มี.ค.)</option>
+                            <option value="Q3">ไตรมาส 3 (เม.ย. - มิ.ย.)</option>
+                            <option value="Q4">ไตรมาส 4 (ก.ค. - ก.ย.)</option>
+                        </select>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Summary Stats -->
+            <div id="summaryStats" class="summary-stats"></div>
+
+            <!-- Data Table -->
+            <div class="card">
+                <div class="table-responsive">
+                    <table class="table" id="reportTable">
+                        <thead id="reportTableHead"></thead>
+                        <tbody id="reportTableBody"></tbody>
+                    </table>
+                </div>
+            </div>
+
+        </div>
+    </main>
+
+    <script src="js/app.js"></script>
+    <script>
+        let currentReportType = 'summary';
+
+        async function pageInit() {
+            await initData();
+            // Populate Fiscal Year filter
+            const fyFilter = document.getElementById('filterFiscalYear');
+            fyFilter.innerHTML = '<option value="all">ทั้งหมด (All Years)</option>';
+            const currentBEYear = new Date().getFullYear() + 543;
+            for (let y = currentBEYear + 2; y >= currentBEYear - 5; y--) {
+                fyFilter.innerHTML += `<option value="${y}">${y}</option>`;
+            }
+
+            const filterRegion = document.getElementById('filterRegion');
+            filterRegion.innerHTML = '<option value="all">ทั้งหมด (All Regions)</option>';
+            systemSettings.regions.forEach(r => { filterRegion.innerHTML += `<option value="${r}">${r}</option>`; });
+
+            const filterType = document.getElementById('filterType');
+            systemSettings.projectTypes.forEach(t => { filterType.innerHTML += `<option value="${t.code}">${t.name}</option>`; });
+
+            renderReport();
+        }
+
+        function selectReportType(type) {
+            currentReportType = type;
+            document.querySelectorAll('.report-type-card').forEach(c => c.classList.remove('active'));
+            const mapping = { summary: 'rtSummary', disburse: 'rtDisburse', transfer: 'rtTransfer', adjust: 'rtAdjust' };
+            document.getElementById(mapping[type]).classList.add('active');
+            renderReport();
+        }
+
+        function updateUnits() {
+            const region = document.getElementById('filterRegion').value;
+            const unitSelect = document.getElementById('filterUnit');
+            unitSelect.innerHTML = '<option value="all">ทั้งหมด (All Units)</option>';
+            if (region !== 'all' && systemSettings.units[region]) {
+                systemSettings.units[region].forEach(unit => {
+                    unitSelect.innerHTML += `<option value="${unit}">${unit}</option>`;
+                });
+            }
+        }
+
+        function getFilteredProjects() {
+            const fy = document.getElementById('filterFiscalYear').value;
+            const region = document.getElementById('filterRegion').value;
+            const unit = document.getElementById('filterUnit').value;
+            const type = document.getElementById('filterType').value;
+            return projects.filter(p => {
+                if (fy !== 'all' && p.fiscalYear !== fy) return false;
+                if (region !== 'all' && p.region !== region) return false;
+                if (unit !== 'all' && p.unit !== unit) return false;
+                if (type !== 'all' && p.projectType !== type) return false;
+                return true;
+            });
+        }
+
+        function getQuarterFilter() {
+            return document.getElementById('filterQuarter').value;
+        }
+
+        function filterTxByQuarter(txList) {
+            const q = getQuarterFilter();
+            if (q === 'all') return txList;
+            return txList.filter(tx => {
+                if (tx.month) return getQuarterFromMonth(tx.month) === q;
+                // Fallback: use timestamp month
+                if (tx.timestamp) {
+                    const d = new Date(tx.timestamp);
+                    return getQuarterFromMonth(String(d.getMonth() + 1)) === q;
+                }
+                return true;
+            });
+        }
+
+        function fmt(n) {
+            return (n || 0).toLocaleString('th-TH', { minimumFractionDigits: 2 });
+        }
+
+        // ================ RENDER DISPATCH ================
+        function renderReport() {
+            switch (currentReportType) {
+                case 'summary': renderSummaryReport(); break;
+                case 'disburse': renderDisburseReport(); break;
+                case 'transfer': renderTransferReport(); break;
+                case 'adjust': renderAdjustReport(); break;
+            }
+        }
+
+        // ================ 1. SUMMARY REPORT ================
+        function renderSummaryReport() {
+            const thead = document.getElementById('reportTableHead');
+            const tbody = document.getElementById('reportTableBody');
+            thead.innerHTML = `<tr><th>ลำดับ</th><th>ภาค/หน่วย</th><th>รายการ</th><th>ประเภท</th><th>งบตั้งต้น</th><th>ขอใช้</th><th>ผูกพัน</th><th>เบิกจ่าย</th><th>คงเหลือ</th></tr>`;
+            tbody.innerHTML = '';
+
+            const fp = getFilteredProjects();
+            let totalBudget = 0, totalReq = 0, totalBind = 0, totalDis = 0, totalRemain = 0;
+
+            if (fp.length === 0) {
+                tbody.innerHTML = '<tr><td colspan="9" style="text-align:center;">ไม่พบข้อมูล</td></tr>';
+                renderSummaryStats(0, 0, 0, 0, 0);
+                return;
+            }
+
+            fp.forEach((p, i) => {
+                const ptx = filterTxByQuarter(transactions.filter(t => t.projectId === p.id));
+                let req = 0, bind = 0, dis = 0;
+                ptx.forEach(t => {
+                    if (t.type === 'request') req += t.amount;
+                    if (t.type === 'bind') bind += t.amount;
+                    if (t.type === 'disburse') dis += t.amount;
+                });
+                totalBudget += p.budgetAmount; totalReq += req; totalBind += bind; totalDis += dis;
+                totalRemain += p.remainingBudget;
+
+                tbody.innerHTML += `<tr>
+                    <td>${i + 1}</td>
+                    <td>${p.region}<br><small class="text-muted">${p.unit}</small></td>
+                    <td>${p.subItem || p.budgetCode || '-'}</td>
+                    <td>${getProjectTypeName(p.projectType)}</td>
+                    <td>${fmt(p.budgetAmount)}</td>
+                    <td style="color:var(--warning)">${fmt(req)}</td>
+                    <td style="color:#6366f1">${fmt(bind)}</td>
+                    <td style="color:var(--success)">${fmt(dis)}</td>
+                    <td style="font-weight:700;">${fmt(p.remainingBudget)}</td>
+                </tr>`;
+            });
+
+            // Total row
+            tbody.innerHTML += `<tr style="font-weight:700; background:var(--secondary-color);">
+                <td colspan="4" style="text-align:right;">รวมทั้งสิ้น</td>
+                <td>${fmt(totalBudget)}</td><td style="color:var(--warning)">${fmt(totalReq)}</td>
+                <td style="color:#6366f1">${fmt(totalBind)}</td><td style="color:var(--success)">${fmt(totalDis)}</td>
+                <td>${fmt(totalRemain)}</td>
+            </tr>`;
+
+            renderSummaryStats(totalBudget, totalReq, totalBind, totalDis, totalRemain);
+        }
+
+        function renderSummaryStats(budget, req, bind, dis, remain) {
+            document.getElementById('summaryStats').innerHTML = `
+                <div class="summary-stat"><div class="ss-value" style="color:var(--text-main)">${fmt(budget)}</div><div class="ss-label">งบประมาณตั้งต้น</div></div>
+                <div class="summary-stat"><div class="ss-value" style="color:var(--warning)">${fmt(req)}</div><div class="ss-label">ขอใช้</div></div>
+                <div class="summary-stat"><div class="ss-value" style="color:#6366f1">${fmt(bind)}</div><div class="ss-label">ผูกพัน</div></div>
+                <div class="summary-stat"><div class="ss-value" style="color:var(--success)">${fmt(dis)}</div><div class="ss-label">เบิกจ่าย</div></div>
+                <div class="summary-stat"><div class="ss-value" style="color:var(--primary-color)">${fmt(remain)}</div><div class="ss-label">คงเหลือ</div></div>
+            `;
+        }
+
+        // ================ 2. DISBURSE REPORT ================
+        function renderDisburseReport() {
+            const thead = document.getElementById('reportTableHead');
+            const tbody = document.getElementById('reportTableBody');
+            thead.innerHTML = `<tr><th>ลำดับ</th><th>วันที่</th><th>ภาค/หน่วย</th><th>โครงการ</th><th>ประเภท</th><th>จำนวนเงินเบิกจ่าย</th></tr>`;
+            tbody.innerHTML = '';
+
+            const fp = getFilteredProjects();
+            const projectIds = new Set(fp.map(p => p.id));
+            let allTx = filterTxByQuarter(transactions.filter(t => projectIds.has(t.projectId) && t.type === 'disburse'));
+            allTx.sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp));
+
+            let total = 0;
+            if (allTx.length === 0) {
+                tbody.innerHTML = '<tr><td colspan="6" style="text-align:center;">ไม่พบรายการเบิกจ่าย</td></tr>';
+                renderDisburseStats(0, 0);
+                return;
+            }
+
+            allTx.forEach((tx, i) => {
+                const p = getProject(tx.projectId);
+                total += tx.amount;
+                tbody.innerHTML += `<tr>
+                    <td>${i + 1}</td>
+                    <td style="font-size:0.85rem;">${formatDate(tx.timestamp)}</td>
+                    <td>${p ? p.region : '-'}<br><small class="text-muted">${p ? p.unit : '-'}</small></td>
+                    <td>${p ? (p.subItem || p.budgetCode || '-') : '-'}</td>
+                    <td>${p ? getProjectTypeName(p.projectType) : '-'}</td>
+                    <td style="color:var(--success); font-weight:600;">${fmt(tx.amount)}</td>
+                </tr>`;
+            });
+
+            tbody.innerHTML += `<tr style="font-weight:700; background:var(--secondary-color);">
+                <td colspan="5" style="text-align:right;">รวมเบิกจ่ายทั้งสิ้น</td>
+                <td style="color:var(--success)">${fmt(total)}</td>
+            </tr>`;
+
+            renderDisburseStats(allTx.length, total);
+        }
+
+        function renderDisburseStats(count, total) {
+            document.getElementById('summaryStats').innerHTML = `
+                <div class="summary-stat"><div class="ss-value" style="color:var(--success)">${count}</div><div class="ss-label">จำนวนรายการเบิกจ่าย</div></div>
+                <div class="summary-stat"><div class="ss-value" style="color:var(--success)">${fmt(total)}</div><div class="ss-label">ยอดเบิกจ่ายรวม</div></div>
+            `;
+        }
+
+        // ================ 3. TRANSFER REPORT ================
+        function renderTransferReport() {
+            const thead = document.getElementById('reportTableHead');
+            const tbody = document.getElementById('reportTableBody');
+            thead.innerHTML = `<tr><th>ลำดับ</th><th>วันที่</th><th>ประเภท</th><th>โครงการ</th><th>ภาค/หน่วย</th><th>รายละเอียด</th><th>จำนวนเงิน</th></tr>`;
+            tbody.innerHTML = '';
+
+            const fp = getFilteredProjects();
+            const projectIds = new Set(fp.map(p => p.id));
+            let allTx = filterTxByQuarter(transactions.filter(t => projectIds.has(t.projectId) && (t.type === 'transfer_in' || t.type === 'transfer_out')));
+            allTx.sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp));
+
+            let totalIn = 0, totalOut = 0;
+            if (allTx.length === 0) {
+                tbody.innerHTML = '<tr><td colspan="7" style="text-align:center;">ไม่พบรายการปรับโอน</td></tr>';
+                renderTransferStats(0, 0, 0);
+                return;
+            }
+
+            allTx.forEach((tx, i) => {
+                const p = getProject(tx.projectId);
+                const isIn = tx.type === 'transfer_in';
+                if (isIn) totalIn += tx.amount; else totalOut += tx.amount;
+                const badge = isIn
+                    ? '<span class="badge" style="background:var(--success);color:white;">รับโอน</span>'
+                    : '<span class="badge" style="background:var(--danger);color:white;">โอนออก</span>';
+                const amtColor = isIn ? 'var(--success)' : 'var(--danger)';
+                const sign = isIn ? '+' : '-';
+
+                tbody.innerHTML += `<tr>
+                    <td>${i + 1}</td>
+                    <td style="font-size:0.85rem;">${formatDate(tx.timestamp)}</td>
+                    <td>${badge}</td>
+                    <td>${p ? (p.subItem || p.budgetCode || '-') : '-'}</td>
+                    <td>${p ? p.region : '-'}<br><small class="text-muted">${p ? p.unit : '-'}</small></td>
+                    <td style="font-size:0.82rem;">${tx.description || '-'}</td>
+                    <td style="color:${amtColor}; font-weight:600;">${sign}${fmt(tx.amount)}</td>
+                </tr>`;
+            });
+
+            tbody.innerHTML += `<tr style="font-weight:700; background:var(--secondary-color);">
+                <td colspan="6" style="text-align:right;">รวมรับโอน / โอนออก</td>
+                <td><span style="color:var(--success)">+${fmt(totalIn)}</span> / <span style="color:var(--danger)">-${fmt(totalOut)}</span></td>
+            </tr>`;
+
+            renderTransferStats(allTx.length, totalIn, totalOut);
+        }
+
+        function renderTransferStats(count, totalIn, totalOut) {
+            document.getElementById('summaryStats').innerHTML = `
+                <div class="summary-stat"><div class="ss-value">${count}</div><div class="ss-label">จำนวนรายการปรับโอน</div></div>
+                <div class="summary-stat"><div class="ss-value" style="color:var(--success)">+${fmt(totalIn)}</div><div class="ss-label">ยอดรับโอนรวม</div></div>
+                <div class="summary-stat"><div class="ss-value" style="color:var(--danger)">-${fmt(totalOut)}</div><div class="ss-label">ยอดโอนออกรวม</div></div>
+            `;
+        }
+
+        // ================ 4. ADJUST REPORT ================
+        function renderAdjustReport() {
+            const thead = document.getElementById('reportTableHead');
+            const tbody = document.getElementById('reportTableBody');
+            thead.innerHTML = `<tr><th>ลำดับ</th><th>วันที่</th><th>ทิศทาง</th><th>โครงการ</th><th>ภาค/หน่วย</th><th>รายละเอียด</th><th>จำนวนเงิน</th></tr>`;
+            tbody.innerHTML = '';
+
+            const fp = getFilteredProjects();
+            const projectIds = new Set(fp.map(p => p.id));
+            let allTx = filterTxByQuarter(transactions.filter(t => projectIds.has(t.projectId) && t.type === 'budget_adjust'));
+            allTx.sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp));
+
+            let totalIncrease = 0, totalDecrease = 0;
+            if (allTx.length === 0) {
+                tbody.innerHTML = '<tr><td colspan="7" style="text-align:center;">ไม่พบรายการปรับแผน</td></tr>';
+                renderAdjustStats(0, 0, 0);
+                return;
+            }
+
+            allTx.forEach((tx, i) => {
+                const p = getProject(tx.projectId);
+                const isUp = tx.direction === 'increase';
+                if (isUp) totalIncrease += tx.amount; else totalDecrease += tx.amount;
+                const badge = isUp
+                    ? '<span class="badge" style="background:var(--success);color:white;">เพิ่ม ↑</span>'
+                    : '<span class="badge" style="background:var(--danger);color:white;">ลด ↓</span>';
+                const amtColor = isUp ? 'var(--success)' : 'var(--danger)';
+                const sign = isUp ? '+' : '-';
+
+                tbody.innerHTML += `<tr>
+                    <td>${i + 1}</td>
+                    <td style="font-size:0.85rem;">${formatDate(tx.timestamp)}</td>
+                    <td>${badge}</td>
+                    <td>${p ? (p.subItem || p.budgetCode || '-') : '-'}</td>
+                    <td>${p ? p.region : '-'}<br><small class="text-muted">${p ? p.unit : '-'}</small></td>
+                    <td style="font-size:0.82rem;">${tx.description || '-'}</td>
+                    <td style="color:${amtColor}; font-weight:600;">${sign}${fmt(tx.amount)}</td>
+                </tr>`;
+            });
+
+            tbody.innerHTML += `<tr style="font-weight:700; background:var(--secondary-color);">
+                <td colspan="6" style="text-align:right;">รวมเพิ่ม / ลด</td>
+                <td><span style="color:var(--success)">+${fmt(totalIncrease)}</span> / <span style="color:var(--danger)">-${fmt(totalDecrease)}</span></td>
+            </tr>`;
+
+            renderAdjustStats(allTx.length, totalIncrease, totalDecrease);
+        }
+
+        function renderAdjustStats(count, totalIncrease, totalDecrease) {
+            document.getElementById('summaryStats').innerHTML = `
+                <div class="summary-stat"><div class="ss-value">${count}</div><div class="ss-label">จำนวนรายการปรับแผน</div></div>
+                <div class="summary-stat"><div class="ss-value" style="color:var(--success)">+${fmt(totalIncrease)}</div><div class="ss-label">ปรับเพิ่มรวม</div></div>
+                <div class="summary-stat"><div class="ss-value" style="color:var(--danger)">-${fmt(totalDecrease)}</div><div class="ss-label">ปรับลดรวม</div></div>
+                <div class="summary-stat"><div class="ss-value" style="color:var(--primary-color)">${fmt(totalIncrease - totalDecrease)}</div><div class="ss-label">ผลต่างสุทธิ</div></div>
+            `;
+        }
+
+        // ================ EXPORT ================
+        function exportToExcel() {
+            const table = document.getElementById('reportTable');
+            const typeNames = { summary: 'สรุปภาพรวม', disburse: 'เบิกจ่าย', transfer: 'ปรับโอน', adjust: 'ปรับแผน' };
+            const sheetName = typeNames[currentReportType] || 'Report';
+            const wb = XLSX.utils.table_to_book(table, { sheet: sheetName });
+
+            const q = getQuarterFilter();
+            const qLabel = q === 'all' ? '' : `_${q}`;
+            const dateStr = new Date().toISOString().split('T')[0];
+            XLSX.writeFile(wb, `รายงาน_${sheetName}${qLabel}_${dateStr}.xlsx`);
+        }
+    </script>
+</body>
+
+</html>

@@ -1,0 +1,463 @@
+<!DOCTYPE html>
+<html lang="th">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AFDC Budget Management System - เพิ่มข้อมูลโครงการ</title>
+    <!-- Google Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <!-- FontAwesome for Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- Custom CSS -->
+    <link rel="stylesheet" href="css/style.css">
+    <!-- XLSX library for Excel parsing -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+</head>
+
+<body>
+
+    <!-- Sidebar -->
+    <aside class="sidebar">
+        <div class="sidebar-brand">
+            <i class="fa-solid fa-wallet"></i>
+            <span style="font-size: 0.85em; margin-left: 10px;">AFDC Budget Management System</span>
+        </div>
+        <nav class="sidebar-nav">
+            <a href="index.html" class="nav-link">
+                <i class="fa-solid fa-chart-pie"></i> ภาพรวมงบประมาณ
+            </a>
+            <a href="project-entry.html" class="nav-link active">
+                <i class="fa-solid fa-folder-plus"></i> เพิ่มข้อมูลโครงการ
+            </a>
+            <a href="budget-management.html" class="nav-link">
+                <i class="fa-solid fa-money-bill-transfer"></i> บริหารงบประมาณ
+            </a>
+            <a href="budget-adjustment.html" class="nav-link">
+                <i class="fa-solid fa-pen-to-square"></i> ปรับแผนงบประมาณ
+            </a>
+            <a href="budget-transfer.html" class="nav-link">
+                <i class="fa-solid fa-right-left"></i> ปรับโอนงบประมาณ
+            </a>
+            <a href="report.html" class="nav-link">
+                <i class="fa-solid fa-file-excel"></i> สรุปรายงาน (Export)
+            </a>
+            <hr style="border-color: var(--sidebar-border); margin: 12px 0;">
+            <a href="system-settings.html" class="nav-link"><i class="fa-solid fa-database"></i> จัดการฐานข้อมูล</a>
+            <a href="user-management.html" class="nav-link"><i class="fa-solid fa-users-gear"></i> จัดการผู้ใช้งาน</a>
+        </nav>
+    </aside>
+
+    <!-- Main Content -->
+    <main class="main-wrapper">
+        <header class="top-header">
+            <div class="header-user">
+                <span>ผู้ใช้งานระบบ</span>
+                <div class="avatar"><i class="fa-solid fa-user"></i></div>
+            </div>
+        </header>
+
+        <div class="content-area">
+            <div class="page-header">
+                <h1 class="page-title">เพิ่มข้อมูลโครงการใหม่ (Add Project)</h1>
+            </div>
+
+            <!-- Bulk Upload Area -->
+            <div class="card"
+                style="background: linear-gradient(135deg, rgba(37,99,235,0.05) 0%, rgba(37,99,235,0.1) 100%);">
+                <h2 class="card-title"><i class="fa-solid fa-file-excel"></i> นำเข้าข้อมูลด้วย Excel (Bulk Import)</h2>
+                <div class="flex-between" style="gap: 20px; flex-wrap: wrap;">
+                    <p style="color: var(--text-muted); font-size: 0.95rem;">ดาวน์โหลด Template กรอกข้อมูลให้ครบถ้วน
+                        จากนั้นอัปโหลดไฟล์เข้าระบบ</p>
+                    <div style="display: flex; gap: 10px;">
+                        <button class="btn btn-outline" id="btnDownloadTemplate">
+                            <i class="fa-solid fa-download"></i> ดาวน์โหลด Template
+                        </button>
+                        <div style="display: none;">
+                            <input type="file" id="excelFileInput" accept=".xlsx, .xls">
+                        </div>
+                        <button class="btn btn-primary" onclick="document.getElementById('excelFileInput').click()">
+                            <i class="fa-solid fa-upload"></i> อัปโหลดข้อมูล
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <form id="projectForm" onsubmit="handleProjectSubmit(event)">
+                <div class="grid-cards" style="grid-template-columns: 1fr 1fr;">
+
+                    <!-- General Data -->
+                    <div class="card" style="margin-bottom:0;">
+                        <h2 class="card-title">1. ข้อมูลทั่วไป (General Info)</h2>
+
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label class="form-label">ปีงบประมาณ (Fiscal Year) *</label>
+                                <select id="fieldFiscalYear" class="form-control" required>
+                                    <option value="">-- เลือกปีงบประมาณ --</option>
+                                </select>
+                            </div>
+                            <div class="form-group">
+                                <label class="form-label">สำนักงานภาค (Region) *</label>
+                                <select id="fieldRegion" class="form-control" required onchange="updateUnitsSelect()">
+                                    <option value="">-- กรูณาเลือกภาค --</option>
+                                </select>
+                            </div>
+                            <div class="form-group">
+                                <label class="form-label">หน่วย (Unit) *</label>
+                                <select id="fieldUnit" class="form-control" required>
+                                    <option value="">-- กรุณาเลือกภาคก่อน --</option>
+                                </select>
+                            </div>
+                        </div>
+
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label class="form-label">ประเภทโครงการ (Project Type) *</label>
+                                <select id="fieldProjectType" class="form-control" required
+                                    onchange="updateSubItemSelect()">
+                                    <option value="">-- กรูณาเลือกประเภทโครงการ --</option>
+                                </select>
+                            </div>
+                            <div class="form-group">
+                                <label class="form-label">รายการ (Sub-item)</label>
+                                <select id="fieldSubItem" class="form-control">
+                                    <option value="">-- กรูณาเลือกรายการย่อย --</option>
+                                </select>
+                            </div>
+                        </div>
+
+                        <div class="form-group">
+                            <label class="form-label">มิติงาน (Work Dimension) *</label>
+                            <input type="text" id="fieldWorkDim" class="form-control" placeholder="ระบุมิติงาน"
+                                required>
+                        </div>
+                    </div>
+
+                    <!-- Location Data -->
+                    <div class="card" style="margin-bottom:0;">
+                        <h2 class="card-title">2. ที่ตั้งโครงการ (Location Location)</h2>
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label class="form-label">หมู่ที่ (Moo)</label>
+                                <input type="text" id="fieldMoo" class="form-control" placeholder="เช่น 1 หรือ 1,2,3">
+                            </div>
+                            <div class="form-group">
+                                <label class="form-label">บ้าน (Village) *</label>
+                                <input type="text" id="fieldVillage" class="form-control" placeholder="ชื่อหมู่บ้าน"
+                                    required>
+                            </div>
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label">ตำบล (Tambon) *</label>
+                            <input type="text" id="fieldTambon" class="form-control" required>
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label">อำเภอ (Amphoe) *</label>
+                            <input type="text" id="fieldAmphoe" class="form-control" required>
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label">จังหวัด (Province) *</label>
+                            <input type="text" id="fieldProvince" class="form-control" required>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Budget & Codes -->
+                <div class="card" style="margin-top: 24px;">
+                    <h2 class="card-title">3. ข้อมูลงบประมาณและรหัส (Budget & Code Information)</h2>
+
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label class="form-label">ประเภทงบประมาณ (Budget Type) *</label>
+                            <select id="fieldBudgetType" class="form-control" required>
+                                <option value="">-- เลือกประเภท --</option>
+                                <option value="งบหลัก">งบหลัก</option>
+                                <option value="งบเสริม">งบเสริม</option>
+                                <option value="งบ กกล.">งบ กกล.</option>
+                                <option value="งบ รร.ตชด.">งบ รร.ตชด.</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label">งบประมาณที่ได้รับอนุมัติ (Budget Amount) *</label>
+                            <input type="number" step="0.01" min="0" id="fieldBudgetAmount" class="form-control"
+                                placeholder="0.00" required>
+                        </div>
+                    </div>
+
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label class="form-label">รหัสศูนย์ต้นทุน</label>
+                            <input type="text" id="fieldCostCenter" class="form-control"
+                                placeholder="หากไม่มีให้เว้นว่าง" required>
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label">รหัสอ้างอิงแหล่งของเงิน</label>
+                            <input type="text" id="fieldFundingSource" class="form-control" required>
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label">รหัสงบประมาณ</label>
+                            <input type="text" id="fieldBudgetCode" class="form-control" required>
+                        </div>
+                    </div>
+
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label class="form-label">รหัสกิจกรรมหลัก</label>
+                            <input type="text" id="fieldMainActivity" class="form-control" required>
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label">รหัสกิจกรรมย่อย</label>
+                            <input type="text" id="fieldSubActivity" class="form-control" required>
+                        </div>
+                    </div>
+
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label class="form-label">รหัสงบประมาณ บก.ทท.</label>
+                            <input type="text" id="fieldRtarfCode" class="form-control" required>
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label">รหัสงบประมาณ นทพ.</label>
+                            <input type="text" id="fieldAfdcCode" class="form-control" required>
+                        </div>
+                    </div>
+
+                    <div style="margin-top: 24px; text-align: right;">
+                        <button type="reset" class="btn btn-outline">ล้างข้อมูล (Clear)</button>
+                        <button type="submit" class="btn btn-primary"><i class="fa-solid fa-save"></i> บันทึกโครงการ
+                            (Save Project)</button>
+                    </div>
+                </div>
+            </form>
+        </div>
+    </main>
+
+    <!-- Excel Upload Preview Modal -->
+    <div id="excelPreviewModal"
+        style="display: none; position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.5); z-index: 9999; align-items: center; justify-content: center; padding: 20px;">
+        <div class="card"
+            style="width: 100%; max-width: 900px; max-height: 90vh; display: flex; flex-direction: column; background: var(--bg-card); overflow: hidden; margin: 0; box-shadow: 0 12px 40px rgba(0,0,0,0.2);">
+            <div class="flex-between" style="padding: 20px 24px; border-bottom: 1px solid var(--border-color);">
+                <h2 style="margin: 0; font-size: 1.25rem;"><i class="fa-solid fa-file-circle-check"
+                        style="color: var(--primary-color);"></i> สรุปผลการตรวจสอบไฟล์ Excel</h2>
+                <button onclick="closeExcelPreview()"
+                    style="background: none; border: none; font-size: 1.25rem; cursor: pointer; color: var(--text-muted);"><i
+                        class="fa-solid fa-xmark"></i></button>
+            </div>
+
+            <div style="padding: 20px 24px; overflow-y: auto; flex: 1;">
+                <div style="display: flex; gap: 16px; margin-bottom: 20px;">
+                    <div
+                        style="flex: 1; background: var(--bg-input); padding: 16px; border-radius: var(--radius-md); text-align: center;">
+                        <span style="display: block; font-size: 2rem; font-weight: 700; color: var(--text-main);"
+                            id="previewTotalCount">0</span>
+                        <span style="color: var(--text-muted); font-size: 0.85rem;">ข้อมูลยอดรวม (รายการ)</span>
+                    </div>
+                    <div
+                        style="flex: 1; background: rgba(16, 185, 129, 0.1); padding: 16px; border-radius: var(--radius-md); text-align: center; border: 1px solid rgba(16, 185, 129, 0.2);">
+                        <span style="display: block; font-size: 2rem; font-weight: 700; color: var(--success);"
+                            id="previewValidCount">0</span>
+                        <span style="color: var(--success); font-size: 0.85rem;">พร้อมนำเข้า (Valid)</span>
+                    </div>
+                    <div
+                        style="flex: 1; background: rgba(244, 63, 94, 0.1); padding: 16px; border-radius: var(--radius-md); text-align: center; border: 1px solid rgba(244, 63, 94, 0.2);">
+                        <span style="display: block; font-size: 2rem; font-weight: 700; color: var(--danger);"
+                            id="previewInvalidCount">0</span>
+                        <span style="color: var(--danger); font-size: 0.85rem;">พบข้อผิดพลาด (Invalid)</span>
+                    </div>
+                </div>
+
+                <div class="table-responsive"
+                    style="max-height: 400px; border: 1px solid var(--border-color); border-radius: var(--radius-md);">
+                    <table class="table" style="margin: 0; width: 100%;">
+                        <thead style="position: sticky; top: 0; background: var(--bg-body); z-index: 1;">
+                            <tr>
+                                <th style="width: 60px;">แถวที่</th>
+                                <th style="width: 100px;">สถานะ</th>
+                                <th>รหัส/ชื่อโครงการ</th>
+                                <th>สำนักงานภาค/หน่วย</th>
+                                <th>หมายเหตุข้อผิดพลาด</th>
+                            </tr>
+                        </thead>
+                        <tbody id="excelPreviewTableBody">
+                            <!-- Populated by JS -->
+                        </tbody>
+                    </table>
+                </div>
+                <p style="margin-top: 12px; font-size: 0.85rem; color: var(--text-muted);"><i
+                        class="fa-solid fa-circle-info"></i> ระบบจะทำการนำเข้าเฉพาะแถวที่มีสถานะ "พร้อมนำเข้า" เท่านั้น
+                </p>
+            </div>
+
+            <div
+                style="padding: 16px 24px; border-top: 1px solid var(--border-color); text-align: right; background: var(--bg-body);">
+                <button class="btn btn-outline" onclick="closeExcelPreview()" style="margin-right: 8px;">ยกเลิก
+                    (Cancel)</button>
+                <button class="btn btn-primary" id="btnConfirmExcelImport" onclick="confirmExcelImport()">
+                    ยืนยันนำเข้าข้อมูล <span id="btnConfirmCount">(0)</span>
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <script src="js/app.js"></script>
+    <script src="js/excel-utils.js"></script>
+    <script>
+        let editProjectId = null;
+
+        document.addEventListener('DOMContentLoaded', pageInit);
+
+        function pageInit() {
+            // Get ID from URL
+            const urlParams = new URLSearchParams(window.location.search);
+            editProjectId = urlParams.get('id');
+
+            // Populate Fiscal Year
+            const fySelect = document.getElementById('fieldFiscalYear');
+            fySelect.innerHTML = '<option value="">-- เลือกปีงบประมาณ --</option>';
+            const currentBEYear = new Date().getFullYear() + 543;
+            for (let y = currentBEYear + 2; y >= currentBEYear - 5; y--) {
+                const selected = y === currentBEYear ? ' selected' : '';
+                fySelect.innerHTML += `<option value="${y}"${selected}>${y}</option>`;
+            }
+
+            // Populate Regions
+            const regionSelect = document.getElementById('fieldRegion');
+            regionSelect.innerHTML = '<option value="">-- กรูณาเลือกภาค --</option>';
+            systemSettings.regions.forEach(r => {
+                regionSelect.innerHTML += `<option value="${r}">${r}</option>`;
+            });
+
+            // Populate Project Types
+            const typeSelect = document.getElementById('fieldProjectType');
+            typeSelect.innerHTML = '<option value="">-- เลือกประเภทโครงการ --</option>';
+            systemSettings.projectTypes.forEach(t => {
+                typeSelect.innerHTML += `<option value="${t.code}">${t.name}</option>`;
+            });
+
+            if (editProjectId) {
+                loadProjectForEdit(editProjectId);
+            }
+        }
+
+        function loadProjectForEdit(id) {
+            const project = getProject(id);
+            if (!project) {
+                alert('ไม่พบข้อมูลโครงการ');
+                window.location.href = 'project-entry.html';
+                return;
+            }
+
+            // Change UI
+            document.querySelector('.page-title').innerText = 'แก้ไขข้อมูลโครงการ (Edit Project)';
+            document.querySelector('button[type="submit"]').innerHTML = '<i class="fa-solid fa-save"></i> อัปเดตข้อมูลโครงการ (Update Project)';
+
+            // Hide Excel Upload in edit mode
+            const excelCard = document.querySelector('.card[style*="linear-gradient"]');
+            if (excelCard) excelCard.style.display = 'none';
+
+            // Pre-fill fields
+            document.getElementById('fieldFiscalYear').value = project.fiscalYear;
+            document.getElementById('fieldRegion').value = project.region;
+
+            // Trigger unit population
+            updateUnitsSelect();
+            document.getElementById('fieldUnit').value = project.unit;
+
+            document.getElementById('fieldProjectType').value = project.projectType;
+            // Trigger sub-item population
+            updateSubItemSelect();
+            document.getElementById('fieldSubItem').value = project.subItem;
+
+            document.getElementById('fieldWorkDim').value = project.workDim;
+            document.getElementById('fieldMoo').value = project.location.moo;
+            document.getElementById('fieldVillage').value = project.location.village || '';
+            document.getElementById('fieldTambon').value = project.location.tambon || '';
+            document.getElementById('fieldAmphoe').value = project.location.amphoe || '';
+            document.getElementById('fieldProvince').value = project.location.province || '';
+
+            document.getElementById('fieldBudgetAmount').value = project.budgetAmount;
+            document.getElementById('fieldBudgetType').value = project.budgetType;
+            document.getElementById('fieldCostCenter').value = project.costCenter || '';
+            document.getElementById('fieldFundingSource').value = project.fundingSource || '';
+            document.getElementById('fieldBudgetCode').value = project.budgetCode || '';
+            document.getElementById('fieldMainActivity').value = project.mainActivity || '';
+            document.getElementById('fieldSubActivity').value = project.subActivity || '';
+            document.getElementById('fieldRtarfCode').value = project.rtarfCode || '';
+            document.getElementById('fieldAfdcCode').value = project.afdcCode || '';
+        }
+
+        function updateUnitsSelect() {
+            const region = document.getElementById('fieldRegion').value;
+            const unitSelect = document.getElementById('fieldUnit');
+            unitSelect.innerHTML = '<option value="">-- กรุณาเลือกหน่วย --</option>'; // Changed default text
+
+            if (region && systemSettings.units[region]) {
+                systemSettings.units[region].forEach(unit => {
+                    unitSelect.innerHTML += `<option value="${unit}">${unit}</option>`;
+                });
+            }
+        }
+
+        function updateSubItemSelect() {
+            const typeCode = document.getElementById('fieldProjectType').value;
+            const subitemSelect = document.getElementById('fieldSubItem');
+            subitemSelect.innerHTML = '<option value="">-- กรูณาเลือกรายการย่อย --</option>';
+
+            if (typeCode && systemSettings.subItems[typeCode]) {
+                systemSettings.subItems[typeCode].forEach(item => {
+                    subitemSelect.innerHTML += `<option value="${item}">${item}</option>`;
+                });
+            }
+        }
+
+        async function handleProjectSubmit(e) {
+            e.preventDefault();
+
+            const projectData = {
+                fiscalYear: document.getElementById('fieldFiscalYear').value,
+                region: document.getElementById('fieldRegion').value,
+                unit: document.getElementById('fieldUnit').value,
+                projectType: document.getElementById('fieldProjectType').value,
+                subItem: document.getElementById('fieldSubItem').value,
+                workDim: document.getElementById('fieldWorkDim').value,
+                location: {
+                    moo: document.getElementById('fieldMoo').value,
+                    village: document.getElementById('fieldVillage').value,
+                    tambon: document.getElementById('fieldTambon').value,
+                    amphoe: document.getElementById('fieldAmphoe').value,
+                    province: document.getElementById('fieldProvince').value
+                },
+                budgetAmount: document.getElementById('fieldBudgetAmount').value,
+                budgetType: document.getElementById('fieldBudgetType').value,
+                costCenter: document.getElementById('fieldCostCenter').value,
+                fundingSource: document.getElementById('fieldFundingSource').value,
+                budgetCode: document.getElementById('fieldBudgetCode').value,
+                mainActivity: document.getElementById('fieldMainActivity').value,
+                subActivity: document.getElementById('fieldSubActivity').value,
+                rtarfCode: document.getElementById('fieldRtarfCode').value,
+                afdcCode: document.getElementById('fieldAfdcCode').value
+            };
+
+            // Validate against master data
+            const errors = validateProjectData(projectData);
+            if (errors.length > 0) {
+                alert('ข้อมูลไม่ถูกต้อง:\n\n' + errors.join('\n'));
+                return;
+            }
+
+            if (editProjectId) {
+                await updateProjectMetadata(editProjectId, projectData);
+                alert('อัปเดตข้อมูลโครงการสำเร็จ!');
+                window.location.href = 'budget-management.html';
+            } else {
+                await addProject(projectData);
+                alert('บันทึกข้อมูลโครงการสำเร็จ!');
+                e.target.reset();
+            }
+        }
+    </script>
+</body>
+
+</html>

@@ -1,0 +1,840 @@
+<!DOCTYPE html>
+<html lang="th">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AFDC Budget Management System - จัดการฐานข้อมูลโครงการ</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="stylesheet" href="css/style.css">
+    <style>
+        /* --- Settings Page Specific Styles --- */
+        .settings-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 16px;
+            /* Reduced gap */
+        }
+
+        .settings-card {
+            background: var(--bg-card);
+            border-radius: var(--radius-lg);
+            border: 1px solid var(--border-color);
+            box-shadow: var(--shadow-sm);
+            overflow: hidden;
+            transition: var(--transition);
+        }
+
+        .settings-card:hover {
+            box-shadow: var(--shadow-md);
+        }
+
+        .settings-card-header {
+            padding: 12px 16px;
+            /* Reduced padding */
+            border-bottom: 1px solid var(--border-color);
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .settings-card-header .card-icon {
+            width: 40px;
+            height: 40px;
+            border-radius: var(--radius-md);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.1rem;
+            flex-shrink: 0;
+        }
+
+        .settings-card-header .card-icon.blue {
+            background: var(--primary-light);
+            color: var(--primary-color);
+        }
+
+        .settings-card-header .card-icon.green {
+            background: var(--success-light);
+            color: var(--success);
+        }
+
+        .settings-card-header .card-icon.orange {
+            background: var(--warning-light);
+            color: var(--warning);
+        }
+
+        .settings-card-header .card-icon.purple {
+            background: rgba(139, 92, 246, 0.1);
+            color: #8b5cf6;
+        }
+
+        .settings-card-header h2 {
+            font-size: 1rem;
+            font-weight: 600;
+            color: var(--text-main);
+            margin: 0;
+        }
+
+        .settings-card-header p {
+            font-size: 0.78rem;
+            color: var(--text-muted);
+            margin: 2px 0 0 0;
+        }
+
+        .settings-card-header .item-count {
+            margin-left: auto;
+            background: var(--bg-input);
+            padding: 4px 12px;
+            border-radius: var(--radius-xl);
+            font-size: 0.75rem;
+            font-weight: 600;
+            color: var(--text-muted);
+        }
+
+        .settings-card-body {
+            padding: 16px;
+            /* Reduced padding */
+        }
+
+        .add-form {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 6px;
+        }
+
+        .add-form .form-control {
+            flex: 1;
+        }
+
+        .add-form .btn {
+            flex-shrink: 0;
+            padding: 10px 18px;
+        }
+
+        .item-list {
+            list-style: none;
+            padding: 0;
+            margin: 0;
+            max-height: 250px;
+            /* Reduced max-height */
+            overflow-y: auto;
+        }
+
+        .item-list li {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 8px 12px;
+            /* Reduced padding */
+            border-radius: var(--radius-md);
+            transition: var(--transition-fast);
+            margin-bottom: 2px;
+        }
+
+        .item-list li:hover {
+            background: var(--bg-hover);
+        }
+
+        .item-list li .item-name {
+            font-size: 0.88rem;
+            color: var(--text-main);
+            font-weight: 500;
+        }
+
+        .item-list li .item-name .item-code {
+            display: inline-block;
+            background: var(--primary-light);
+            color: var(--primary-color);
+            font-size: 0.72rem;
+            font-weight: 700;
+            padding: 2px 8px;
+            border-radius: 4px;
+            margin-right: 8px;
+        }
+
+        .item-list li .item-actions {
+            display: flex;
+            gap: 2px;
+            opacity: 0;
+            transition: var(--transition-fast);
+        }
+
+        .item-list li:hover .item-actions {
+            opacity: 1;
+        }
+
+        .item-list li .btn-edit,
+        .item-list li .btn-delete {
+            background: none;
+            border: none;
+            color: var(--text-muted);
+            cursor: pointer;
+            padding: 4px 8px;
+            border-radius: var(--radius-sm);
+            font-size: 0.82rem;
+            transition: var(--transition-fast);
+        }
+
+        .item-list li .btn-edit:hover {
+            background: var(--primary-light);
+            color: var(--primary-color);
+        }
+
+        .item-list li .btn-delete:hover {
+            background: var(--danger-light);
+            color: var(--danger);
+        }
+
+        .empty-state {
+            text-align: center;
+            padding: 28px 16px;
+            color: var(--text-muted);
+            font-size: 0.85rem;
+        }
+
+        .empty-state i {
+            font-size: 2rem;
+            margin-bottom: 10px;
+            opacity: 0.3;
+            display: block;
+        }
+
+        .parent-selector {
+            margin-bottom: 16px;
+        }
+
+        /* Section badge like "ข้อมูลหลัก" */
+        .section-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            padding: 4px 12px;
+            /* Reduced padding */
+            background: var(--primary-light);
+            color: var(--primary-color);
+            border-radius: var(--radius-xl);
+            font-size: 0.75rem;
+            font-weight: 600;
+            margin-bottom: 12px;
+            /* Reduced margin */
+        }
+
+        @media (max-width: 768px) {
+            .settings-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+
+<body>
+    <aside class="sidebar">
+        <div class="sidebar-brand">
+            <i class="fa-solid fa-wallet"></i>
+            <span style="font-size: 0.85em; margin-left: 10px;">AFDC Budget Management System</span>
+        </div>
+        <nav class="sidebar-nav">
+            <a href="index.html" class="nav-link"><i class="fa-solid fa-chart-pie"></i> ภาพรวมงบประมาณ</a>
+            <a href="project-entry.html" class="nav-link"><i class="fa-solid fa-folder-plus"></i> เพิ่มข้อมูลโครงการ</a>
+            <a href="budget-management.html" class="nav-link"><i class="fa-solid fa-money-bill-transfer"></i>
+                บริหารงบประมาณ</a>
+            <a href="budget-adjustment.html" class="nav-link"><i class="fa-solid fa-pen-to-square"></i>
+                ปรับแผนงบประมาณ</a>
+            <a href="budget-transfer.html" class="nav-link"><i class="fa-solid fa-right-left"></i> ปรับโอนงบประมาณ</a>
+            <a href="report.html" class="nav-link"><i class="fa-solid fa-file-excel"></i> สรุปรายงาน (Export)</a>
+            <hr style="border-color: var(--sidebar-border); margin: 12px 0;">
+            <a href="system-settings.html" class="nav-link active"><i class="fa-solid fa-database"></i>
+                จัดการฐานข้อมูล</a>
+            <a href="user-management.html" class="nav-link"><i class="fa-solid fa-users-gear"></i> จัดการผู้ใช้งาน</a>
+        </nav>
+    </aside>
+
+    <main class="main-wrapper">
+        <header class="top-header">
+            <div class="header-user"><span>ผู้ใช้งานระบบ</span>
+                <div class="avatar"><i class="fa-solid fa-user"></i></div>
+            </div>
+        </header>
+
+        <div class="content-area">
+            <div class="page-header">
+                <div>
+                    <h1 class="page-title">จัดการฐานข้อมูลโครงการ</h1>
+                    <p style="color: var(--text-muted); font-size: 0.88rem; margin-top: 4px;">
+                        เพิ่ม แก้ไข หรือลบข้อมูลหลักที่ใช้ในระบบทั้งหมด
+                    </p>
+                </div>
+            </div>
+
+            <div class="section-badge"><i class="fa-solid fa-palette"></i> ปรับแต่งระบบ</div>
+            <div class="settings-card" style="margin-bottom: 16px;">
+                <div class="settings-card-header">
+                    <div class="card-icon" style="background: linear-gradient(135deg, #ec4899, #8b5cf6); color: white;">
+                        <i class="fa-solid fa-wand-magic-sparkles"></i>
+                    </div>
+                    <div>
+                        <h2>แบรนดิ้งและธีมสี</h2>
+                        <p>โลโก้และสีหลักของระบบ</p>
+                    </div>
+                </div>
+                <div class="settings-card-body" style="display: flex; gap: 20px; flex-wrap: wrap;">
+
+                    <!-- Logo Upload -->
+                    <div style="flex: 1; min-width: 250px;">
+                        <label class="form-label">รูปสัญลักษณ์ระบบ (Logo / Icon)</label>
+                        <div style="display: flex; align-items: center; gap: 16px;">
+                            <div id="previewIcon"
+                                style="width: 64px; height: 64px; border-radius: var(--radius-md); border: 2px dashed var(--border-color); display: flex; align-items: center; justify-content: center; background: var(--bg-input); overflow: hidden;">
+                                <i class="fa-solid fa-image" style="color: var(--text-muted); font-size: 1.5rem;"></i>
+                            </div>
+                            <div style="flex: 1;">
+                                <input type="file" id="iconUpload" accept="image/png, image/jpeg, image/gif"
+                                    class="form-control" onchange="handleIconUpload(event)">
+                                <p style="font-size: 0.75rem; color: var(--text-muted); margin-top: 4px;">
+                                    ขนาดไฟล์ไม่เกิน 500KB (สัดส่วน 1:1)</p>
+                                <button type="button" class="btn btn-outline"
+                                    style="padding: 4px 8px; font-size: 0.75rem; margin-top: 6px;"
+                                    onclick="handleRemoveIcon()">ลบรูปภาพ</button>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Theme Selection -->
+                    <div style="flex: 1; min-width: 250px;">
+                        <label class="form-label">ธีมสีหลัก (Color Theme)</label>
+                        <div style="display: flex; gap: 12px; margin-top: 8px;" id="themeButtons">
+                            <button onclick="handleThemeChange('indigo')" class="theme-btn" data-theme="indigo"
+                                style="width: 40px; height: 40px; border-radius: 50%; border: 3px solid transparent; background: #6366f1; cursor: pointer; transition: 0.2s;"
+                                title="Indigo (สีม่วงคราม)"></button>
+                            <button onclick="handleThemeChange('emerald')" class="theme-btn" data-theme="emerald"
+                                style="width: 40px; height: 40px; border-radius: 50%; border: 3px solid transparent; background: #10b981; cursor: pointer; transition: 0.2s;"
+                                title="Emerald (สีเขียวมรกต)"></button>
+                            <button onclick="handleThemeChange('rose')" class="theme-btn" data-theme="rose"
+                                style="width: 40px; height: 40px; border-radius: 50%; border: 3px solid transparent; background: #f43f5e; cursor: pointer; transition: 0.2s;"
+                                title="Rose (สีชมพูแดง)"></button>
+                            <button onclick="handleThemeChange('amber')" class="theme-btn" data-theme="amber"
+                                style="width: 40px; height: 40px; border-radius: 50%; border: 3px solid transparent; background: #f59e0b; cursor: pointer; transition: 0.2s;"
+                                title="Amber (สีส้มเหลือง)"></button>
+                        </div>
+                        <p style="font-size: 0.75rem; color: var(--text-muted); margin-top: 12px;">
+                            เลือกระบบสีเพื่อเปลี่ยนโทนสีทั้งหมด</p>
+                    </div>
+
+                </div>
+            </div>
+
+            <div class="section-badge"><i class="fa-solid fa-circle-info"></i> ข้อมูลหลักที่จัดการได้ 4 หมวด</div>
+
+            <div class="settings-grid">
+
+                <!-- 1. ประเภทโครงการ -->
+                <div class="settings-card">
+                    <div class="settings-card-header">
+                        <div class="card-icon blue"><i class="fa-solid fa-layer-group"></i></div>
+                        <div>
+                            <h2>ประเภทโครงการ</h2>
+                            <p>Project Types</p>
+                        </div>
+                        <span class="item-count" id="typeCount">0 รายการ</span>
+                    </div>
+                    <div class="settings-card-body">
+                        <div class="add-form">
+                            <input type="text" id="newTypeCode" class="form-control" placeholder="รหัส (เช่น 05)"
+                                style="max-width: 100px;">
+                            <input type="text" id="newTypeName" class="form-control" placeholder="ชื่อประเภทโครงการ...">
+                            <button class="btn btn-primary" onclick="handleAddProjectType()"><i
+                                    class="fa-solid fa-plus"></i> เพิ่ม</button>
+                        </div>
+                        <ul id="projectTypesList" class="item-list"></ul>
+                    </div>
+                </div>
+
+                <!-- 2. รายการย่อย -->
+                <div class="settings-card">
+                    <div class="settings-card-header">
+                        <div class="card-icon purple"><i class="fa-solid fa-list-ul"></i></div>
+                        <div>
+                            <h2>รายการย่อย</h2>
+                            <p>Sub-Items (ของประเภทโครงการ)</p>
+                        </div>
+                        <span class="item-count" id="subItemCount">0 รายการ</span>
+                    </div>
+                    <div class="settings-card-body">
+                        <div class="parent-selector">
+                            <label class="form-label">เลือกประเภทโครงการหลัก</label>
+                            <select id="typeForSubItemSelect" class="form-control"
+                                onchange="renderSubItemsList()"></select>
+                        </div>
+                        <div class="add-form">
+                            <input type="text" id="newSubItemInput" class="form-control"
+                                placeholder="ระบุรายการย่อย...">
+                            <button class="btn btn-primary" onclick="handleAddSubItem()"><i
+                                    class="fa-solid fa-plus"></i> เพิ่ม</button>
+                        </div>
+                        <ul id="subItemsList" class="item-list"></ul>
+                    </div>
+                </div>
+
+                <!-- 3. สำนักงานภาค -->
+                <div class="settings-card">
+                    <div class="settings-card-header">
+                        <div class="card-icon orange"><i class="fa-solid fa-building-columns"></i></div>
+                        <div>
+                            <h2>สำนักงานภาค</h2>
+                            <p>Regional Offices</p>
+                        </div>
+                        <span class="item-count" id="regionCount">0 รายการ</span>
+                    </div>
+                    <div class="settings-card-body">
+                        <div class="add-form">
+                            <input type="text" id="newRegionInput" class="form-control" placeholder="ระบุชื่อภาค...">
+                            <button class="btn btn-primary" onclick="handleAddRegion()"><i class="fa-solid fa-plus"></i>
+                                เพิ่ม</button>
+                        </div>
+                        <ul id="regionsList" class="item-list"></ul>
+                    </div>
+                </div>
+
+                <!-- 4. หน่วย -->
+                <div class="settings-card">
+                    <div class="settings-card-header">
+                        <div class="card-icon green"><i class="fa-solid fa-users-rectangle"></i></div>
+                        <div>
+                            <h2>หน่วย</h2>
+                            <p>Units (ของสำนักงานภาค)</p>
+                        </div>
+                        <span class="item-count" id="unitCount">0 รายการ</span>
+                    </div>
+                    <div class="settings-card-body">
+                        <div class="parent-selector">
+                            <label class="form-label">เลือกสำนักงานภาคที่ต้องการจัดการหน่วย</label>
+                            <select id="regionForUnitSelect" class="form-control" onchange="renderUnitsList()"></select>
+                        </div>
+                        <div class="add-form">
+                            <input type="text" id="newUnitInput" class="form-control" placeholder="ระบุชื่อหน่วย...">
+                            <button class="btn btn-primary" onclick="handleAddUnit()"><i class="fa-solid fa-plus"></i>
+                                เพิ่ม</button>
+                        </div>
+                        <ul id="unitsList" class="item-list"></ul>
+                    </div>
+                </div>
+
+            </div>
+
+            <!-- Danger Zone -->
+            <div
+                style="margin-top: 32px; border: 1px solid rgba(239,68,68,0.3); border-radius: var(--radius-lg); background: rgba(239,68,68,0.03); overflow: hidden;">
+                <div
+                    style="padding: 18px 24px; border-bottom: 1px solid rgba(239,68,68,0.15); display: flex; align-items: center; gap: 12px;">
+                    <div
+                        style="width:40px; height:40px; border-radius:var(--radius-md); display:flex; align-items:center; justify-content:center; background:rgba(239,68,68,0.1); color:var(--danger); font-size:1.1rem;">
+                        <i class="fa-solid fa-triangle-exclamation"></i>
+                    </div>
+                    <div>
+                        <h2 style="color:var(--danger); font-size:1rem; margin:0;">พื้นที่อันตราย (Danger Zone)</h2>
+                        <p style="color:var(--text-muted); font-size:0.78rem; margin:0;">
+                            การดำเนินการในส่วนนี้ไม่สามารถย้อนกลับได้</p>
+                    </div>
+                </div>
+                <div
+                    style="padding: 20px 24px; display:flex; align-items:center; justify-content:space-between; gap:16px;">
+                    <div>
+                        <p style="font-weight:600; font-size:0.9rem; margin-bottom:4px;">ลบข้อมูลโครงการทั้งหมด</p>
+                        <p style="color:var(--text-muted); font-size:0.82rem; margin:0;">ลบโครงการ, ธุรกรรมงบประมาณ
+                            (ขอใช้/ผูกพัน/เบิกจ่าย/ปรับโอน) ทั้งหมดออกจากระบบ ข้อมูลฐานข้อมูลหลัก (ภาค, หน่วย,
+                            ประเภทโครงการ) จะยังคงอยู่</p>
+                    </div>
+                    <button class="btn" onclick="handleDeleteAllProjects()"
+                        style="background:var(--danger); color:white; white-space:nowrap; padding:10px 20px; flex-shrink:0;">
+                        <i class="fa-solid fa-trash-can"></i> ลบโครงการทั้งหมด
+                    </button>
+                </div>
+            </div>
+
+        </div>
+    </main>
+
+    <script src="js/app.js"></script>
+    <script>
+        async function pageInit() {
+            await initData();
+            // This setup uses systemSettings heavily without needing async other than saveData which we did
+            renderProjectTypesList();
+            renderRegionsList();
+            renderRegionSelects();
+            renderTypeSelects();
+            renderBrandingSettings();
+        }
+
+        // ===== BRANDING =====
+
+        function renderBrandingSettings() {
+            const theme = (systemSettings.branding && systemSettings.branding.theme) ? systemSettings.branding.theme : 'indigo';
+            document.querySelectorAll('.theme-btn').forEach(btn => {
+                if (btn.getAttribute('data-theme') === theme) {
+                    btn.style.boxShadow = '0 0 0 2px white, 0 0 0 4px var(--primary-color)';
+                } else {
+                    btn.style.boxShadow = 'none';
+                }
+            });
+
+            const iconUrl = (systemSettings.branding && systemSettings.branding.iconUrl);
+            const preview = document.getElementById('previewIcon');
+            if (iconUrl) {
+                preview.innerHTML = `<img src="${iconUrl}" style="width:100%; height:100%; object-fit:contain;">`;
+            } else {
+                preview.innerHTML = `<i class="fa-solid fa-image" style="color: var(--text-muted); font-size: 1.5rem;"></i>`;
+            }
+        }
+
+        function handleThemeChange(newTheme) {
+            updateBranding(newTheme, undefined);
+            renderBrandingSettings();
+        }
+
+        function handleIconUpload(event) {
+            const file = event.target.files[0];
+            if (!file) return;
+
+            // Check size (500KB max ~ 512000 bytes)
+            if (file.size > 512000) {
+                alert('ขนาดไฟล์ใหญ่เกินไป (จำกัด 500KB)');
+                event.target.value = ''; // clear
+                return;
+            }
+
+            const reader = new FileReader();
+            reader.onload = function (e) {
+                const base64Str = e.target.result;
+                updateBranding(undefined, base64Str);
+                renderBrandingSettings();
+            };
+            reader.readAsDataURL(file);
+        }
+
+        function handleRemoveIcon() {
+            if (confirm('ต้องการลบรูปโลโก้ออกใช่หรือไม่?')) {
+                document.getElementById('iconUpload').value = '';
+                updateBranding(undefined, null);
+                renderBrandingSettings();
+            }
+        }
+
+        // ===== RENDER LISTS =====
+
+        function renderProjectTypesList() {
+            const list = document.getElementById('projectTypesList');
+            list.innerHTML = '';
+            document.getElementById('typeCount').textContent = systemSettings.projectTypes.length + ' รายการ';
+
+            if (systemSettings.projectTypes.length === 0) {
+                list.innerHTML = '<div class="empty-state"><i class="fa-solid fa-folder-open"></i>ยังไม่มีประเภทโครงการ</div>';
+                return;
+            }
+            systemSettings.projectTypes.forEach((type, index) => {
+                const isFirst = index === 0;
+                const isLast = index === systemSettings.projectTypes.length - 1;
+                list.innerHTML += `
+                    <li>
+                        <span class="item-name">${type.code} - ${type.name}</span>
+                        <div class="item-actions">
+                            <button class="btn-edit" style="color:#64748b;" onclick="handleMoveProjectType(${index}, -1)" title="เลื่อนขึ้น" ${isFirst ? 'disabled style="opacity:0.3;cursor:not-allowed;"' : ''}><i class="fa-solid fa-arrow-up"></i></button>
+                            <button class="btn-edit" style="color:#64748b;" onclick="handleMoveProjectType(${index}, 1)" title="เลื่อนลง" ${isLast ? 'disabled style="opacity:0.3;cursor:not-allowed;"' : ''}><i class="fa-solid fa-arrow-down"></i></button>
+                            <button class="btn-edit" onclick="handleEditProjectType('${type.code}')" title="แก้ไข"><i class="fa-solid fa-pen"></i></button>
+                            <button class="btn-delete" onclick="handleDeleteProjectType('${type.code}')" title="ลบ"><i class="fa-solid fa-trash-can"></i></button>
+                        </div>
+                    </li>`;
+            });
+            renderTypeSelects();
+        }
+
+        function renderSubItemsList() {
+            const list = document.getElementById('subItemsList');
+            const typeCode = document.getElementById('typeForSubItemSelect').value;
+            list.innerHTML = '';
+
+            const items = (typeCode && systemSettings.subItems[typeCode]) ? systemSettings.subItems[typeCode] : [];
+            document.getElementById('subItemCount').textContent = items.length + ' รายการ';
+
+            if (!typeCode) {
+                list.innerHTML = '<div class="empty-state"><i class="fa-solid fa-hand-pointer"></i>กรุณาเลือกประเภทโครงการด้านบน</div>';
+                return;
+            }
+            if (items.length === 0) {
+                list.innerHTML = '<div class="empty-state"><i class="fa-solid fa-folder-open"></i>ยังไม่มีรายการย่อย</div>';
+                return;
+            }
+            items.forEach((subItem, index) => {
+                const escaped = subItem.replace(/'/g, "\\'");
+                const isFirst = index === 0;
+                const isLast = index === items.length - 1;
+                list.innerHTML += `
+                    <li>
+                        <span class="item-name">${subItem}</span>
+                        <div class="item-actions">
+                            <button class="btn-edit" style="color:#64748b;" onclick="handleMoveSubItem('${typeCode}', ${index}, -1)" title="เลื่อนขึ้น" ${isFirst ? 'disabled style="opacity:0.3;cursor:not-allowed;"' : ''}><i class="fa-solid fa-arrow-up"></i></button>
+                            <button class="btn-edit" style="color:#64748b;" onclick="handleMoveSubItem('${typeCode}', ${index}, 1)" title="เลื่อนลง" ${isLast ? 'disabled style="opacity:0.3;cursor:not-allowed;"' : ''}><i class="fa-solid fa-arrow-down"></i></button>
+                            <button class="btn-edit" onclick="handleEditSubItem('${typeCode}', '${escaped}')" title="แก้ไข"><i class="fa-solid fa-pen"></i></button>
+                            <button class="btn-delete" onclick="handleDeleteSubItem('${typeCode}', '${escaped}')" title="ลบ"><i class="fa-solid fa-trash-can"></i></button>
+                        </div>
+                    </li>`;
+            });
+        }
+
+        function renderRegionsList() {
+            const list = document.getElementById('regionsList');
+            list.innerHTML = '';
+            document.getElementById('regionCount').textContent = systemSettings.regions.length + ' รายการ';
+
+            if (systemSettings.regions.length === 0) {
+                list.innerHTML = '<div class="empty-state"><i class="fa-solid fa-folder-open"></i>ยังไม่มีสำนักงานภาค</div>';
+                return;
+            }
+            systemSettings.regions.forEach((region, index) => {
+                const escaped = region.replace(/'/g, "\\'");
+                const isFirst = index === 0;
+                const isLast = index === systemSettings.regions.length - 1;
+                list.innerHTML += `
+                    <li>
+                        <span class="item-name">${region}</span>
+                        <div class="item-actions">
+                            <button class="btn-edit" style="color:#64748b;" onclick="handleMoveRegion(${index}, -1)" title="เลื่อนขึ้น" ${isFirst ? 'disabled style="opacity:0.3;cursor:not-allowed;"' : ''}><i class="fa-solid fa-arrow-up"></i></button>
+                            <button class="btn-edit" style="color:#64748b;" onclick="handleMoveRegion(${index}, 1)" title="เลื่อนลง" ${isLast ? 'disabled style="opacity:0.3;cursor:not-allowed;"' : ''}><i class="fa-solid fa-arrow-down"></i></button>
+                            <button class="btn-edit" onclick="handleEditRegion('${escaped}')" title="แก้ไข"><i class="fa-solid fa-pen"></i></button>
+                            <button class="btn-delete" onclick="handleDeleteRegion('${escaped}')" title="ลบ"><i class="fa-solid fa-trash-can"></i></button>
+                        </div>
+                    </li>`;
+            });
+            renderRegionSelects();
+        }
+
+        function renderUnitsList() {
+            const list = document.getElementById('unitsList');
+            const region = document.getElementById('regionForUnitSelect').value;
+            list.innerHTML = '';
+
+            const units = (region && systemSettings.units[region]) ? systemSettings.units[region] : [];
+            document.getElementById('unitCount').textContent = units.length + ' รายการ';
+
+            if (!region) {
+                list.innerHTML = '<div class="empty-state"><i class="fa-solid fa-hand-pointer"></i>กรุณาเลือกสำนักงานภาคด้านบน</div>';
+                return;
+            }
+            if (units.length === 0) {
+                list.innerHTML = '<div class="empty-state"><i class="fa-solid fa-folder-open"></i>ยังไม่มีหน่วย</div>';
+                return;
+            }
+            units.forEach((unit, index) => {
+                const escapedR = region.replace(/'/g, "\\'");
+                const escapedU = unit.replace(/'/g, "\\'");
+                const isFirst = index === 0;
+                const isLast = index === units.length - 1;
+                list.innerHTML += `
+                    <li>
+                        <span class="item-name">${unit}</span>
+                        <div class="item-actions">
+                            <button class="btn-edit" style="color:#64748b;" onclick="handleMoveUnit('${escapedR}', ${index}, -1)" title="เลื่อนขึ้น" ${isFirst ? 'disabled style="opacity:0.3;cursor:not-allowed;"' : ''}><i class="fa-solid fa-arrow-up"></i></button>
+                            <button class="btn-edit" style="color:#64748b;" onclick="handleMoveUnit('${escapedR}', ${index}, 1)" title="เลื่อนลง" ${isLast ? 'disabled style="opacity:0.3;cursor:not-allowed;"' : ''}><i class="fa-solid fa-arrow-down"></i></button>
+                            <button class="btn-edit" onclick="handleEditUnit('${escapedR}', '${escapedU}')" title="แก้ไข"><i class="fa-solid fa-pen"></i></button>
+                            <button class="btn-delete" onclick="handleDeleteUnit('${escapedR}', '${escapedU}')" title="ลบ"><i class="fa-solid fa-trash-can"></i></button>
+                        </div>
+                    </li>`;
+            });
+        }
+
+        // ===== RENDER DROPDOWNS =====
+
+        function renderRegionSelects() {
+            const select = document.getElementById('regionForUnitSelect');
+            const currentVal = select.value;
+            select.innerHTML = '<option value="">-- เลือกสำนักงานภาค --</option>';
+            systemSettings.regions.forEach(r => {
+                select.innerHTML += `<option value="${r}">${r}</option>`;
+            });
+            select.value = currentVal;
+            renderUnitsList();
+        }
+
+        function renderTypeSelects() {
+            const select = document.getElementById('typeForSubItemSelect');
+            const currentVal = select.value;
+            select.innerHTML = '<option value="">-- เลือกประเภทโครงการ --</option>';
+            systemSettings.projectTypes.forEach(t => {
+                select.innerHTML += `<option value="${t.code}">${t.name}</option>`;
+            });
+            select.value = currentVal;
+            renderSubItemsList();
+        }
+
+        // ===== HANDLERS =====
+
+        function handleMoveRegion(index, dir) {
+            moveRegion(index, dir);
+            renderRegionsList();
+            renderRegionSelects();
+        }
+
+        function handleMoveUnit(region, index, dir) {
+            moveUnit(region, index, dir);
+            renderUnitsList();
+        }
+
+        function handleMoveProjectType(index, dir) {
+            moveProjectType(index, dir);
+            renderProjectTypesList();
+            renderTypeSelects();
+        }
+
+        function handleMoveSubItem(typeCode, index, dir) {
+            moveSubItem(typeCode, index, dir);
+            renderSubItemsList();
+        }
+
+        function handleAddRegion() {
+            const input = document.getElementById('newRegionInput');
+            const val = input.value.trim();
+            if (!val) { alert('กรุณาระบุชื่อสำนักงานภาค'); return; }
+            if (addRegion(val)) {
+                input.value = '';
+                renderRegionsList();
+            } else {
+                alert('สำนักงานภาคนี้มีอยู่แล้ว');
+            }
+        }
+
+        function handleDeleteRegion(region) {
+            if (confirm(`ยืนยันการลบ "${region}" ?\n\n⚠️ หน่วยทั้งหมดที่อยู่ภายใต้ภาคนี้จะถูกลบด้วย`)) {
+                deleteRegion(region);
+                renderRegionsList();
+            }
+        }
+
+        function handleAddUnit() {
+            const region = document.getElementById('regionForUnitSelect').value;
+            const input = document.getElementById('newUnitInput');
+            const val = input.value.trim();
+            if (!region) { alert('กรุณาเลือกสำนักงานภาคก่อน'); return; }
+            if (!val) { alert('กรุณาระบุชื่อหน่วย'); return; }
+            addUnit(region, val);
+            input.value = '';
+            renderUnitsList();
+        }
+
+        function handleDeleteUnit(region, unit) {
+            if (confirm(`ยืนยันการลบหน่วย "${unit}" ?`)) {
+                deleteUnit(region, unit);
+                renderUnitsList();
+            }
+        }
+
+        function handleAddProjectType() {
+            const codeInput = document.getElementById('newTypeCode');
+            const nameInput = document.getElementById('newTypeName');
+            const code = codeInput.value.trim();
+            const name = nameInput.value.trim();
+            if (!code || !name) { alert('กรุณาระบุรหัสและชื่อประเภทโครงการ'); return; }
+            addProjectType(code, name);
+            codeInput.value = '';
+            nameInput.value = '';
+            renderProjectTypesList();
+        }
+
+        function handleDeleteProjectType(code) {
+            const typeName = systemSettings.projectTypes.find(t => t.code === code)?.name || code;
+            if (confirm(`ยืนยันการลบประเภทโครงการ "${code} - ${typeName}" ?\n\n⚠️ รายการย่อยทั้งหมดที่อยู่ภายใต้ประเภทนี้จะถูกลบด้วย`)) {
+                deleteProjectType(code);
+                renderProjectTypesList();
+            }
+        }
+
+        function handleAddSubItem() {
+            const code = document.getElementById('typeForSubItemSelect').value;
+            const input = document.getElementById('newSubItemInput');
+            const val = input.value.trim();
+            if (!code) { alert('กรุณาเลือกประเภทโครงการก่อน'); return; }
+            if (!val) { alert('กรุณาระบุรายการย่อย'); return; }
+            addSubItem(code, val);
+            input.value = '';
+            renderSubItemsList();
+        }
+
+        // ===== EDIT HANDLERS =====
+
+        function handleEditRegion(oldName) {
+            const newName = prompt('แก้ไขชื่อสำนักงานภาค:', oldName);
+            if (!newName || newName.trim() === '' || newName.trim() === oldName) return;
+            if (renameRegion(oldName, newName.trim())) {
+                renderRegionsList();
+            } else {
+                alert('ชื่อนี้มีอยู่แล้ว หรือไม่สามารถแก้ไขได้');
+            }
+        }
+
+        function handleEditUnit(region, oldUnit) {
+            const newUnit = prompt('แก้ไขชื่อหน่วย:', oldUnit);
+            if (!newUnit || newUnit.trim() === '' || newUnit.trim() === oldUnit) return;
+            if (renameUnit(region, oldUnit, newUnit.trim())) {
+                renderUnitsList();
+            } else {
+                alert('ชื่อนี้มีอยู่แล้ว หรือไม่สามารถแก้ไขได้');
+            }
+        }
+
+        function handleEditProjectType(code) {
+            const pt = systemSettings.projectTypes.find(t => t.code === code);
+            if (!pt) return;
+            const newName = prompt('แก้ไขชื่อประเภทโครงการ:', pt.name);
+            if (!newName || newName.trim() === '' || newName.trim() === pt.name) return;
+            renameProjectType(code, newName.trim());
+            renderProjectTypesList();
+        }
+
+        function handleEditSubItem(typeCode, oldName) {
+            const newName = prompt('แก้ไขรายการย่อย:', oldName);
+            if (!newName || newName.trim() === '' || newName.trim() === oldName) return;
+            if (renameSubItem(typeCode, oldName, newName.trim())) {
+                renderSubItemsList();
+            } else {
+                alert('ชื่อนี้มีอยู่แล้ว หรือไม่สามารถแก้ไขได้');
+            }
+        }
+
+        function handleDeleteSubItem(code, subItem) {
+            if (confirm(`ยืนยันการลบรายการย่อย "${subItem}" ?`)) {
+                deleteSubItem(code, subItem);
+                renderSubItemsList();
+            }
+        }
+
+        async function handleDeleteAllProjects() {
+            const projectCount = projects.length;
+            const txCount = transactions.length;
+
+            if (projectCount === 0) {
+                alert('ไม่มีข้อมูลโครงการในระบบ');
+                return;
+            }
+
+            const msg = `⚠️ คุณกำลังจะลบข้อมูลทั้งหมด:\n\n` +
+                `• โครงการ: ${projectCount} โครงการ\n` +
+                `• ธุรกรรม: ${txCount} รายการ\n\n` +
+                `ข้อมูลนี้จะไม่สามารถกู้คืนได้\n` +
+                `ยืนยันการลบทั้งหมดหรือไม่?`;
+
+            if (!confirm(msg)) return;
+
+            if (!confirm('⚠️ ยืนยันอีกครั้ง: ลบข้อมูลโครงการและธุรกรรมทั้งหมด?')) return;
+
+            // Clear projects and transactions
+            projects.length = 0;
+            transactions.length = 0;
+            await saveData();
+
+            alert(`ลบข้อมูลสำเร็จ!\n\n• ลบโครงการ: ${projectCount} โครงการ\n• ลบธุรกรรม: ${txCount} รายการ`);
+        }
+    </script>
+</body>
+
+</html>
