@@ -1,0 +1,537 @@
+<!DOCTYPE html>
+<html lang="th">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AFDC Budget Management System - จัดการผู้ใช้งาน</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="stylesheet" href="style.css">
+    <style>
+        .user-stats {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 16px;
+            margin-bottom: 24px;
+        }
+
+        .user-stat {
+            text-align: center;
+            padding: 18px;
+            background: var(--bg-card);
+            border-radius: var(--radius-lg);
+            border: 1px solid var(--border-color);
+            box-shadow: var(--shadow-sm);
+        }
+
+        .user-stat .count {
+            font-size: 1.75rem;
+            font-weight: 700;
+            color: var(--text-main);
+        }
+
+        .user-stat .label {
+            font-size: 0.78rem;
+            color: var(--text-muted);
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            margin-top: 4px;
+        }
+
+        /* Modal */
+        .modal-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.5);
+            backdrop-filter: blur(4px);
+            display: none;
+            align-items: center;
+            justify-content: center;
+            z-index: 200;
+        }
+
+        .modal-overlay.show {
+            display: flex;
+        }
+
+        .modal {
+            background: var(--bg-card);
+            border-radius: var(--radius-lg);
+            width: 100%;
+            max-width: 480px;
+            box-shadow: var(--shadow-xl);
+            animation: slideInUp 0.25s ease;
+        }
+
+        .modal-header {
+            padding: 16px 20px;
+            border-bottom: 1px solid var(--border-color);
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+
+        .modal-header h3 {
+            font-size: 1.05rem;
+            font-weight: 600;
+        }
+
+        .modal-header .close-btn {
+            background: none;
+            border: none;
+            cursor: pointer;
+            color: var(--text-muted);
+            font-size: 1.1rem;
+            padding: 4px;
+        }
+
+        .modal-header .close-btn:hover {
+            color: var(--text-main);
+        }
+
+        .modal-body {
+            padding: 16px 20px;
+        }
+
+        .modal-body .form-group {
+            margin-bottom: 12px;
+        }
+
+        .modal-body .form-group:last-child {
+            margin-bottom: 0;
+        }
+
+        .modal-footer {
+            padding: 12px 20px;
+            border-top: 1px solid var(--border-color);
+            display: flex;
+            justify-content: flex-end;
+            gap: 10px;
+        }
+
+        .role-option {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            padding: 8px 12px;
+            border: 1.5px solid var(--border-color);
+            border-radius: var(--radius-md);
+            cursor: pointer;
+            transition: var(--transition-fast);
+            margin-bottom: 6px;
+        }
+
+        .role-option:hover {
+            border-color: var(--primary-color);
+            background: var(--primary-light);
+        }
+
+        .role-option.selected {
+            border-color: var(--primary-color);
+            background: var(--primary-light);
+        }
+
+        .role-option input[type="radio"] {
+            accent-color: var(--primary-color);
+        }
+
+        .role-option .role-info h4 {
+            font-size: 0.88rem;
+            font-weight: 600;
+            color: var(--text-main);
+        }
+
+        .role-option .role-info p {
+            font-size: 0.75rem;
+            color: var(--text-muted);
+            margin-top: 2px;
+        }
+
+        .table td .actions {
+            display: flex;
+            gap: 6px;
+        }
+
+        .table td .actions button {
+            padding: 6px 12px;
+            font-size: 0.78rem;
+        }
+
+        @media (max-width: 768px) {
+            .user-stats {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+
+<body>
+    <aside class="sidebar">
+        <div class="sidebar-brand">
+            <i class="fa-solid fa-wallet"></i>
+            <span style="font-size: 0.85em; margin-left: 10px;">AFDC Budget Management System</span>
+        </div>
+        <nav class="sidebar-nav">
+            <a href="index.html" class="nav-link"><i class="fa-solid fa-chart-pie"></i> ภาพรวมงบประมาณ</a>
+            <a href="project-entry.html" class="nav-link"><i class="fa-solid fa-folder-plus"></i> เพิ่มข้อมูลโครงการ</a>
+            <a href="budget-management.html" class="nav-link"><i class="fa-solid fa-money-bill-transfer"></i>
+                บริหารงบประมาณ</a>
+            <a href="budget-adjustment.html" class="nav-link"><i class="fa-solid fa-pen-to-square"></i>
+                ปรับแผนงบประมาณ</a>
+            <a href="budget-transfer.html" class="nav-link"><i class="fa-solid fa-right-left"></i> ปรับโอนงบประมาณ</a>
+            <a href="report.html" class="nav-link"><i class="fa-solid fa-file-excel"></i> สรุปรายงาน (Export)</a>
+            <hr style="border-color: var(--sidebar-border); margin: 12px 0;">
+            <a href="system-settings.html" class="nav-link"><i class="fa-solid fa-database"></i> จัดการฐานข้อมูล</a>
+            <a href="user-management.html" class="nav-link active"><i class="fa-solid fa-users-gear"></i>
+                จัดการผู้ใช้งาน</a>
+        </nav>
+    </aside>
+
+    <main class="main-wrapper">
+        <header class="top-header">
+            <button class="menu-toggle" onclick="toggleSidebar()" title="เปิดเมนู">
+                <i class="fa-solid fa-bars"></i>
+            </button>
+            <div class="header-user"><span>ผู้ใช้งานระบบ</span>
+                <div class="avatar"><i class="fa-solid fa-user"></i></div>
+            </div>
+        </header>
+
+        <div class="content-area">
+            <div class="page-header">
+                <div>
+                    <h1 class="page-title">จัดการผู้ใช้งาน</h1>
+                    <p style="color: var(--text-muted); font-size: 0.88rem; margin-top: 4px;">
+                        สร้าง แก้ไข ลบ และกำหนดสิทธิ์การเข้าถึงของผู้ใช้งาน
+                    </p>
+                </div>
+                <button class="btn btn-primary" onclick="showAddModal()">
+                    <i class="fa-solid fa-user-plus"></i> เพิ่มผู้ใช้ใหม่
+                </button>
+            </div>
+
+            <!-- Stats -->
+            <div class="user-stats" id="userStats"></div>
+
+            <!-- Users Table -->
+            <div class="card">
+                <h2 class="card-title"><i class="fa-solid fa-users"></i> รายชื่อผู้ใช้งานทั้งหมด</h2>
+                <div class="table-responsive">
+                    <table class="table" id="usersTable">
+                        <thead>
+                            <tr>
+                                <th>ชื่อผู้ใช้</th>
+                                <th>ชื่อที่แสดง</th>
+                                <th>สิทธิ์</th>
+                                <th>วันที่สร้าง</th>
+                                <th style="text-align:right;">จัดการ</th>
+                            </tr>
+                        </thead>
+                        <tbody id="usersTableBody"></tbody>
+                    </table>
+                </div>
+            </div>
+
+            <!-- Access Matrix -->
+            <div class="card">
+                <h2 class="card-title"><i class="fa-solid fa-shield-halved"></i> ตารางสิทธิ์การเข้าถึง</h2>
+                <div class="table-responsive">
+                    <table class="table">
+                        <thead>
+                            <tr>
+                                <th>เมนู / หน้า</th>
+                                <th style="text-align:center;">Admin</th>
+                                <th style="text-align:center;">Superuser</th>
+                                <th style="text-align:center;">User</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td>ภาพรวมงบประมาณ (Dashboard)</td>
+                                <td style="text-align:center; color: var(--success);"><i
+                                        class="fa-solid fa-circle-check"></i></td>
+                                <td style="text-align:center; color: var(--success);"><i
+                                        class="fa-solid fa-circle-check"></i></td>
+                                <td style="text-align:center; color: var(--success);"><i
+                                        class="fa-solid fa-circle-check"></i></td>
+                            </tr>
+                            <tr>
+                                <td>เพิ่มข้อมูลโครงการ</td>
+                                <td style="text-align:center; color: var(--success);"><i
+                                        class="fa-solid fa-circle-check"></i></td>
+                                <td style="text-align:center; color: var(--success);"><i
+                                        class="fa-solid fa-circle-check"></i></td>
+                                <td style="text-align:center; color: var(--success);"><i
+                                        class="fa-solid fa-circle-check"></i></td>
+                            </tr>
+                            <tr>
+                                <td>บริหารงบประมาณ</td>
+                                <td style="text-align:center; color: var(--success);"><i
+                                        class="fa-solid fa-circle-check"></i></td>
+                                <td style="text-align:center; color: var(--success);"><i
+                                        class="fa-solid fa-circle-check"></i></td>
+                                <td style="text-align:center; color: var(--success);"><i
+                                        class="fa-solid fa-circle-check"></i></td>
+                            </tr>
+                            <tr>
+                                <td>ปรับแผน / ปรับโอนงบประมาณ</td>
+                                <td style="text-align:center; color: var(--success);"><i
+                                        class="fa-solid fa-circle-check"></i></td>
+                                <td style="text-align:center; color: var(--success);"><i
+                                        class="fa-solid fa-circle-check"></i></td>
+                                <td style="text-align:center; color: var(--success);"><i
+                                        class="fa-solid fa-circle-check"></i></td>
+                            </tr>
+                            <tr>
+                                <td>สรุปรายงาน (Export)</td>
+                                <td style="text-align:center; color: var(--success);"><i
+                                        class="fa-solid fa-circle-check"></i></td>
+                                <td style="text-align:center; color: var(--success);"><i
+                                        class="fa-solid fa-circle-check"></i></td>
+                                <td style="text-align:center; color: var(--success);"><i
+                                        class="fa-solid fa-circle-check"></i></td>
+                            </tr>
+                            <tr>
+                                <td><strong>จัดการฐานข้อมูลโครงการ</strong></td>
+                                <td style="text-align:center; color: var(--success);"><i
+                                        class="fa-solid fa-circle-check"></i></td>
+                                <td style="text-align:center; color: var(--success);"><i
+                                        class="fa-solid fa-circle-check"></i></td>
+                                <td style="text-align:center; color: var(--danger);"><i
+                                        class="fa-solid fa-circle-xmark"></i></td>
+                            </tr>
+                            <tr>
+                                <td><strong>จัดการผู้ใช้งาน</strong></td>
+                                <td style="text-align:center; color: var(--success);"><i
+                                        class="fa-solid fa-circle-check"></i></td>
+                                <td style="text-align:center; color: var(--danger);"><i
+                                        class="fa-solid fa-circle-xmark"></i></td>
+                                <td style="text-align:center; color: var(--danger);"><i
+                                        class="fa-solid fa-circle-xmark"></i></td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <!-- Add/Edit Modal -->
+    <div class="modal-overlay" id="userModal">
+        <div class="modal">
+            <div class="modal-header">
+                <h3 id="modalTitle">เพิ่มผู้ใช้ใหม่</h3>
+                <button class="close-btn" onclick="closeModal()"><i class="fa-solid fa-xmark"></i></button>
+            </div>
+            <div class="modal-body">
+                <input type="hidden" id="editUserId">
+                <div class="form-group">
+                    <label class="form-label">ชื่อผู้ใช้งาน (Username)</label>
+                    <input type="text" id="modalUsername" class="form-control" placeholder="ระบุชื่อผู้ใช้">
+                </div>
+                <div class="form-group">
+                    <label class="form-label">ชื่อที่แสดง (Display Name)</label>
+                    <input type="text" id="modalDisplayName" class="form-control" placeholder="ระบุชื่อแสดงผล">
+                </div>
+                <div class="form-group">
+                    <label class="form-label">รหัสผ่าน (Password)</label>
+                    <input type="password" id="modalPassword" class="form-control" placeholder="ระบุรหัสผ่าน">
+                    <small style="color: var(--text-muted); font-size:0.75rem;"
+                        id="passwordHint">ระบุรหัสผ่านใหม่</small>
+                </div>
+                <div class="form-group">
+                    <label class="form-label">กำหนดสิทธิ์การเข้าถึง</label>
+                    <div class="role-option" onclick="selectRole('admin')">
+                        <input type="radio" name="role" value="admin" id="roleAdmin">
+                        <div class="role-info">
+                            <h4><i class="fa-solid fa-crown" style="color: var(--danger);"></i> Admin</h4>
+                            <p>เข้าถึงระบบทั้งหมด รวมถึงจัดการผู้ใช้งาน</p>
+                        </div>
+                    </div>
+                    <div class="role-option" onclick="selectRole('superuser')">
+                        <input type="radio" name="role" value="superuser" id="roleSuperuser">
+                        <div class="role-info">
+                            <h4><i class="fa-solid fa-user-shield" style="color: var(--warning);"></i> Superuser</h4>
+                            <p>เข้าถึงระบบทั้งหมด ยกเว้นจัดการผู้ใช้งาน</p>
+                        </div>
+                    </div>
+                    <div class="role-option" onclick="selectRole('user')">
+                        <input type="radio" name="role" value="user" id="roleUser" checked>
+                        <div class="role-info">
+                            <h4><i class="fa-solid fa-user" style="color: var(--primary-color);"></i> User</h4>
+                            <p>เข้าถึงระบบทั้งหมด ยกเว้นจัดการผู้ใช้งานและฐานข้อมูล</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-outline" onclick="closeModal()">ยกเลิก</button>
+                <button class="btn btn-primary" onclick="handleSaveUser()" id="saveBtn">
+                    <i class="fa-solid fa-floppy-disk"></i> บันทึก
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <script src="app.js"></script>
+    <script>
+        async function pageInit() {
+            await initData();
+            renderUserStats();
+            renderUsersTable();
+        }
+
+        function renderUserStats() {
+            const users = getUsers();
+            const admins = users.filter(u => u.role === 'admin').length;
+            const supers = users.filter(u => u.role === 'superuser').length;
+            const regulars = users.filter(u => u.role === 'user').length;
+
+            document.getElementById('userStats').innerHTML = `
+                <div class="user-stat">
+                    <div class="count" style="color: var(--danger);">${admins}</div>
+                    <div class="label">Admin</div>
+                </div>
+                <div class="user-stat">
+                    <div class="count" style="color: var(--warning);">${supers}</div>
+                    <div class="label">Superuser</div>
+                </div>
+                <div class="user-stat">
+                    <div class="count" style="color: var(--primary-color);">${regulars}</div>
+                    <div class="label">User</div>
+                </div>
+            `;
+        }
+
+        function renderUsersTable() {
+            const users = getUsers();
+            const tbody = document.getElementById('usersTableBody');
+            tbody.innerHTML = '';
+
+            if (users.length === 0) {
+                tbody.innerHTML = '<tr><td colspan="5" style="text-align:center; color: var(--text-muted);">ไม่มีข้อมูลผู้ใช้</td></tr>';
+                return;
+            }
+
+            users.forEach(u => {
+                const isDefault = u.id === 'admin_default';
+                tbody.innerHTML += `
+                    <tr>
+                        <td><strong>${u.username}</strong></td>
+                        <td>${u.displayName || '-'}</td>
+                        <td>${getRoleBadge(u.role)}</td>
+                        <td>${formatDate(u.createdAt)}</td>
+                        <td style="text-align:right;">
+                            <div class="actions" style="justify-content:flex-end;">
+                                <button class="btn btn-outline" style="padding:6px 12px; font-size:0.78rem;" onclick="showEditModal('${u.id}')">
+                                    <i class="fa-solid fa-pen"></i> แก้ไข
+                                </button>
+                                ${isDefault ? '' : `
+                                <button class="btn btn-danger" style="padding:6px 12px; font-size:0.78rem;" onclick="handleDeleteUser('${u.id}', '${u.username}')">
+                                    <i class="fa-solid fa-trash-can"></i> ลบ
+                                </button>`}
+                            </div>
+                        </td>
+                    </tr>
+                `;
+            });
+        }
+
+        // Modal functions
+        function showAddModal() {
+            document.getElementById('modalTitle').textContent = 'เพิ่มผู้ใช้ใหม่';
+            document.getElementById('editUserId').value = '';
+            document.getElementById('modalUsername').value = '';
+            document.getElementById('modalDisplayName').value = '';
+            document.getElementById('modalPassword').value = '';
+            document.getElementById('passwordHint').textContent = 'ระบุรหัสผ่าน';
+            document.getElementById('modalUsername').disabled = false;
+            selectRole('user');
+            document.getElementById('userModal').classList.add('show');
+        }
+
+        function showEditModal(userId) {
+            const users = getUsers();
+            const user = users.find(u => u.id === userId);
+            if (!user) return;
+
+            document.getElementById('modalTitle').textContent = 'แก้ไขผู้ใช้: ' + user.username;
+            document.getElementById('editUserId').value = userId;
+            document.getElementById('modalUsername').value = user.username;
+            document.getElementById('modalDisplayName').value = user.displayName || '';
+            document.getElementById('modalPassword').value = '';
+            document.getElementById('passwordHint').textContent = 'เว้นว่างหากไม่ต้องการเปลี่ยนรหัสผ่าน';
+
+            // Disable username change for default admin
+            document.getElementById('modalUsername').disabled = (userId === 'admin_default');
+
+            selectRole(user.role);
+            document.getElementById('userModal').classList.add('show');
+        }
+
+        function closeModal() {
+            document.getElementById('userModal').classList.remove('show');
+        }
+
+        function selectRole(role) {
+            document.querySelectorAll('.role-option').forEach(el => el.classList.remove('selected'));
+            document.getElementById('roleAdmin').checked = (role === 'admin');
+            document.getElementById('roleSuperuser').checked = (role === 'superuser');
+            document.getElementById('roleUser').checked = (role === 'user');
+
+            // Highlight selected
+            const radio = document.querySelector(`input[name="role"][value="${role}"]`);
+            if (radio) radio.closest('.role-option').classList.add('selected');
+        }
+
+        function getSelectedRole() {
+            const checked = document.querySelector('input[name="role"]:checked');
+            return checked ? checked.value : 'user';
+        }
+
+        async function handleSaveUser() {
+            const userId = document.getElementById('editUserId').value;
+            const username = document.getElementById('modalUsername').value.trim();
+            const displayName = document.getElementById('modalDisplayName').value.trim();
+            const password = document.getElementById('modalPassword').value;
+            const role = getSelectedRole();
+
+            if (!username) { alert('กรุณาระบุชื่อผู้ใช้'); return; }
+
+            if (userId) {
+                // Edit mode
+                const updates = { displayName, role };
+                if (username !== '') updates.username = username;
+                if (password !== '') updates.password = password;
+
+                const result = await updateUser(userId, updates);
+                if (!result.success) { alert(result.message); return; }
+            } else {
+                // Add mode
+                if (!password) { alert('กรุณาระบุรหัสผ่าน'); return; }
+
+                const result = await addUser({ username, password, displayName, role });
+                if (!result.success) { alert(result.message); return; }
+            }
+
+            closeModal();
+            renderUserStats();
+            renderUsersTable();
+        }
+
+        async function handleDeleteUser(userId, username) {
+            if (confirm(`ยืนยันการลบผู้ใช้ "${username}" ?\n\n⚠️ การดำเนินการนี้ไม่สามารถย้อนกลับได้`)) {
+                const result = await deleteUser(userId);
+                if (!result.success) { alert(result.message); return; }
+                renderUserStats();
+                renderUsersTable();
+            }
+        }
+    </script>
+</body>
+
+</html>

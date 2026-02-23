@@ -1,0 +1,382 @@
+<!DOCTYPE html>
+<html lang="th">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AFDC Budget Management System - ปรับโอนงบประมาณ</title>
+    <!-- Google Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <!-- FontAwesome for Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- Custom CSS -->
+    <link rel="stylesheet" href="style.css">
+    <style>
+        .transfer-layout {
+            display: grid;
+            grid-template-columns: 1fr auto 1fr;
+            gap: 24px;
+            align-items: stretch;
+            margin-bottom: 24px;
+        }
+
+        .project-search-pane {
+            background: var(--bg-card);
+            border-radius: var(--radius-lg);
+            border: 1px solid var(--border-color);
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+            box-shadow: var(--shadow-sm);
+        }
+
+        .pane-header {
+            padding: 16px 20px;
+            font-weight: 600;
+            color: white;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .pane-header.source {
+            background-color: var(--danger);
+        }
+
+        .pane-header.dest {
+            background-color: var(--success);
+        }
+
+        .pane-filters {
+            padding: 16px;
+            border-bottom: 1px solid var(--border-color);
+            background: #f8fafc;
+        }
+
+        .project-list-items {
+            height: 350px;
+            overflow-y: auto;
+        }
+
+        .project-item {
+            padding: 12px 16px;
+            border-bottom: 1px solid var(--border-color);
+            cursor: pointer;
+            transition: var(--transition);
+        }
+
+        .project-item:hover {
+            background-color: var(--secondary-color);
+        }
+
+        .project-item.active-source {
+            background-color: rgba(239, 68, 68, 0.05);
+            border-left: 3px solid var(--danger);
+        }
+
+        .project-item.active-dest {
+            background-color: rgba(16, 185, 129, 0.05);
+            border-left: 3px solid var(--success);
+        }
+
+        .transfer-arrow {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            padding-top: 100px;
+            color: var(--text-muted);
+        }
+
+        .transfer-arrow i {
+            font-size: 2.5rem;
+            color: var(--primary-color);
+            background: rgba(37, 99, 235, 0.1);
+            width: 60px;
+            height: 60px;
+            border-radius: 50%;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+
+        /* Action Bar */
+        .transfer-action-bar {
+            background: var(--bg-card);
+            padding: 24px;
+            border-radius: var(--radius-lg);
+            border: 1px solid var(--border-color);
+            box-shadow: var(--shadow-md);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+    </style>
+</head>
+
+<body>
+    <aside class="sidebar">
+        <div class="sidebar-brand">
+            <i class="fa-solid fa-wallet"></i>
+            <span style="font-size: 0.85em; margin-left: 10px;">AFDC Budget Management System</span>
+        </div>
+        <nav class="sidebar-nav">
+            <a href="index.html" class="nav-link"><i class="fa-solid fa-chart-pie"></i> ภาพรวมงบประมาณ</a>
+            <a href="project-entry.html" class="nav-link"><i class="fa-solid fa-folder-plus"></i> เพิ่มข้อมูลโครงการ</a>
+            <a href="budget-management.html" class="nav-link"><i class="fa-solid fa-money-bill-transfer"></i>
+                บริหารงบประมาณ</a>
+            <a href="budget-adjustment.html" class="nav-link"><i class="fa-solid fa-pen-to-square"></i>
+                ปรับแผนงบประมาณ</a>
+            <a href="budget-transfer.html" class="nav-link active"><i class="fa-solid fa-right-left"></i>
+                ปรับโอนงบประมาณ</a>
+            <a href="report.html" class="nav-link"><i class="fa-solid fa-file-excel"></i> สรุปรายงาน (Export)</a>
+            <hr style="border-color: var(--sidebar-border); margin: 12px 0;">
+            <a href="system-settings.html" class="nav-link"><i class="fa-solid fa-database"></i> จัดการฐานข้อมูล</a>
+            <a href="user-management.html" class="nav-link"><i class="fa-solid fa-users-gear"></i> จัดการผู้ใช้งาน</a>
+        </nav>
+    </aside>
+
+    <main class="main-wrapper">
+        <header class="top-header">
+            <button class="menu-toggle" onclick="toggleSidebar()" title="เปิดเมนู">
+                <i class="fa-solid fa-bars"></i>
+            </button>
+            <div class="header-user"><span>ผู้ใช้งานระบบ</span>
+                <div class="avatar"><i class="fa-solid fa-user"></i></div>
+            </div>
+        </header>
+
+        <div class="content-area">
+            <div class="page-header">
+                <h1 class="page-title">ปรับโอนงบประมาณ (Budget Transfer)</h1>
+            </div>
+
+            <div class="transfer-layout">
+                <!-- Source Pane -->
+                <div class="project-search-pane">
+                    <div class="pane-header source"><i class="fa-solid fa-file-export"></i> โครงการต้นทาง (โอนออก)</div>
+                    <div class="pane-filters">
+                        <input type="text" id="srcSearch" class="form-control" placeholder="ค้นหาชื่อ, รหัส..."
+                            oninput="renderSourceList()" style="margin-bottom:8px;">
+                        <div style="display:flex; gap:8px;">
+                            <select id="srcRegion" class="form-control" onchange="renderSourceList()">
+                                <option value="all">ทุกภาค</option>
+                            </select>
+                            <select id="srcType" class="form-control" onchange="renderSourceList()">
+                                <option value="all">ทุกประเภท</option>
+                            </select>
+                        </div>
+                    </div>
+                    <div class="project-list-items" id="srcListContainer"></div>
+                </div>
+
+                <!-- Arrow -->
+                <div class="transfer-arrow">
+                    <i class="fa-solid fa-arrow-right-long"></i>
+                </div>
+
+                <!-- Destination Pane -->
+                <div class="project-search-pane">
+                    <div class="pane-header dest"><i class="fa-solid fa-file-import"></i> โครงการปลายทาง (รับโอน)</div>
+                    <div class="pane-filters">
+                        <input type="text" id="dstSearch" class="form-control" placeholder="ค้นหาชื่อ, รหัส..."
+                            oninput="renderDestList()" style="margin-bottom:8px;">
+                        <div style="display:flex; gap:8px;">
+                            <select id="dstRegion" class="form-control" onchange="renderDestList()">
+                                <option value="all">ทุกภาค</option>
+                            </select>
+                            <select id="dstType" class="form-control" onchange="renderDestList()">
+                                <option value="all">ทุกประเภท</option>
+                            </select>
+                        </div>
+                    </div>
+                    <div class="project-list-items" id="dstListContainer"></div>
+                </div>
+            </div>
+
+            <!-- Action Bar -->
+            <div class="transfer-action-bar">
+                <div style="flex: 1;">
+                    <h3 style="margin-bottom:8px; display:flex; gap:16px;">
+                        <span style="color:var(--danger)">ต้นทาง: <span id="lblSrcName"
+                                style="color:var(--text-main);font-weight:400;">(ยังไม่ได้เลือก)</span></span>
+                        <i class="fa-solid fa-arrow-right" style="color:var(--text-muted)"></i>
+                        <span style="color:var(--success)">ปลายทาง: <span id="lblDstName"
+                                style="color:var(--text-main);font-weight:400;">(ยังไม่ได้เลือก)</span></span>
+                    </h3>
+                    <p style="color:var(--text-muted); font-size:0.9rem;">
+                        งบคงเหลือต้นทาง: <strong id="lblSrcBudget" style="color:var(--text-main);">฿0.00</strong>
+                    </p>
+                </div>
+                <div style="display:flex; gap:16px; align-items:flex-end;">
+                    <div class="form-group" style="margin:0;">
+                        <label class="form-label">จำนวนเงินที่ต้องการโอน (บาท)</label>
+                        <input type="number" step="0.01" min="0.01" id="transferAmount" class="form-control"
+                            placeholder="0.00" style="font-size:1.25rem; font-weight:600; width:200px;">
+                    </div>
+                    <button class="btn btn-primary" onclick="executeTransfer()"
+                        style="height: 46px; padding: 0 32px;"><i class="fa-solid fa-money-bill-transfer"></i>
+                        ดำเนินการโอน</button>
+                </div>
+            </div>
+
+        </div>
+    </main>
+
+    <script src="app.js"></script>
+    <script>
+        let selectedSrcId = null;
+        let selectedDstId = null;
+
+        async function pageInit() {
+            await initData();
+            // Populate Filters
+            const srcRegion = document.getElementById('srcRegion');
+            const dstRegion = document.getElementById('dstRegion');
+            srcRegion.innerHTML = '<option value="all">ทั้งหมด (All Regions)</option>';
+            dstRegion.innerHTML = '<option value="all">ทั้งหมด (All Regions)</option>';
+            systemSettings.regions.forEach(r => {
+                srcRegion.innerHTML += `<option value="${r}">${r}</option>`;
+                dstRegion.innerHTML += `<option value="${r}">${r}</option>`;
+            });
+
+            const srcType = document.getElementById('srcType');
+            const dstType = document.getElementById('dstType');
+            srcType.innerHTML = '<option value="all">ทั้งหมด (All Types)</option>';
+            dstType.innerHTML = '<option value="all">ทั้งหมด (All Types)</option>';
+            systemSettings.projectTypes.forEach(t => {
+                srcType.innerHTML += `<option value="${t.code}">${t.name}</option>`;
+                dstType.innerHTML += `<option value="${t.code}">${t.name}</option>`;
+            });
+
+            renderSourceList();
+            renderDestList();
+        }
+
+        // --- Shared filtering logic ---
+        function getFilteredProjects(search, region, type) {
+            return projects.filter(p => {
+                let match = true;
+                if (region !== 'all' && p.region !== region) match = false;
+                if (type !== 'all' && p.projectType !== type) match = false;
+                if (search) {
+                    const str = `${p.subItem} ${p.unit} ${p.budgetCode} ${p.rtarfCode}`.toLowerCase();
+                    if (!str.includes(search)) match = false;
+                }
+                return match;
+            });
+        }
+
+        function createProjectCard(p, type) {
+            const div = document.createElement('div');
+            const isActive = type === 'src' ? p.id === selectedSrcId : p.id === selectedDstId;
+            const activeClass = isActive ? (type === 'src' ? 'active-source' : 'active-dest') : '';
+            div.className = `project-item ${activeClass}`;
+            div.onclick = () => selectProject(p.id, type);
+
+            const name = p.subItem || p.budgetCode || "โครงการไม่มีชื่อ";
+            div.innerHTML = `
+                <div style="font-weight:600; margin-bottom:4px; font-size:0.95rem;">${name}</div>
+                <div style="font-size:0.8rem; color:var(--text-muted); margin-bottom:6px;">${p.region} | ${p.unit}</div>
+                <div style="font-size:0.9rem; font-weight:600; color:${type === 'src' ? 'var(--danger)' : 'var(--success)'};">
+                    คงเหลือ: ${formatCurrency(p.remainingBudget)}
+                </div>
+            `;
+            return div;
+        }
+
+        // --- Render Lists ---
+        function renderSourceList() {
+            const search = document.getElementById('srcSearch').value.toLowerCase();
+            const region = document.getElementById('srcRegion').value;
+            const type = document.getElementById('srcType').value;
+            const container = document.getElementById('srcListContainer');
+
+            container.innerHTML = '';
+            const list = getFilteredProjects(search, region, type);
+
+            if (list.length === 0) container.innerHTML = '<div style="padding:16px;text-align:center;">ไม่พบข้อมูล</div>';
+            list.forEach(p => container.appendChild(createProjectCard(p, 'src')));
+        }
+
+        function renderDestList() {
+            const search = document.getElementById('dstSearch').value.toLowerCase();
+            const region = document.getElementById('dstRegion').value;
+            const type = document.getElementById('dstType').value;
+            const container = document.getElementById('dstListContainer');
+
+            container.innerHTML = '';
+            const list = getFilteredProjects(search, region, type);
+
+            if (list.length === 0) container.innerHTML = '<div style="padding:16px;text-align:center;">ไม่พบข้อมูล</div>';
+            list.forEach(p => {
+                // Ignore the same project as source
+                if (p.id !== selectedSrcId) {
+                    container.appendChild(createProjectCard(p, 'dst'));
+                }
+            });
+        }
+
+        // --- Selection & Actions ---
+        function selectProject(id, type) {
+            const p = getProject(id);
+            if (!p) return;
+
+            if (type === 'src') {
+                selectedSrcId = id;
+                document.getElementById('lblSrcName').innerText = p.subItem || p.budgetCode;
+                document.getElementById('lblSrcBudget').innerText = formatCurrency(p.remainingBudget);
+
+                // If destination was same as newly selected source, clear destination
+                if (selectedDstId === id) {
+                    selectedDstId = null;
+                    document.getElementById('lblDstName').innerText = "(ยังไม่ได้เลือก)";
+                }
+            } else {
+                selectedDstId = id;
+                document.getElementById('lblDstName').innerText = p.subItem || p.budgetCode;
+            }
+
+            renderSourceList();
+            renderDestList();
+        }
+
+        async function executeTransfer() {
+            if (!selectedSrcId || !selectedDstId) {
+                alert('กรุณาเลือกโครงการต้นทาง และ ปลายทาง');
+                return;
+            }
+
+            const amountInput = document.getElementById('transferAmount');
+            const amount = parseFloat(amountInput.value);
+
+            if (isNaN(amount) || amount <= 0) {
+                alert('จำนวนเงินไม่ถูกต้อง');
+                return;
+            }
+
+            const confirmMsg = `ยื่นยันการโอนเงินจำนวน ${formatCurrency(amount)} ใช่หรือไม่?`;
+            if (!confirm(confirmMsg)) return;
+
+            const descSrc = `โอนออกไปยังโครงการ ${getProject(selectedDstId)?.subItem || 'ปลายทาง'}`;
+            const descDst = `รับโอนจากโครงการ ${getProject(selectedSrcId)?.subItem || 'ต้นทาง'}`;
+
+            // Deduct from Source
+            const srcSuccess = await updateProjectBudget(selectedSrcId, amount, 'transfer_out', descSrc);
+
+            if (srcSuccess) {
+                // Add to Destination
+                await updateProjectBudget(selectedDstId, amount, 'transfer_in', descDst);
+
+                alert('ปรับโอนงบประมาณสำเร็จ');
+                amountInput.value = '';
+
+                // Refresh UI
+                selectProject(selectedSrcId, 'src');
+                selectProject(selectedDstId, 'dst');
+            }
+        }
+    </script>
+</body>
+
+</html>
